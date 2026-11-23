@@ -1,0 +1,16 @@
+{
+  "name": "moyu-app",
+  "version": "1.0.0",
+  "description": "摸鱼神器 - 伪装成IDE的多站点浏览器",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "keywords": ["moyu", "productivity"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
