@@ -1,21 +1,25 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import AppLayout from './layouts/AppLayout.vue'
-import { useNavStore } from './stores'
-import { onMounted } from 'vue'
+import { usePrefsStore, useTabStore } from './stores'
 
-const navStore = useNavStore()
+const prefsStore = usePrefsStore()
+const tabStore = useTabStore()
+const ready = ref(false)
 
-onMounted(() => {
-  navStore.init()
-  
-  // Listen for global search shortcut
+onMounted(async () => {
+  await prefsStore.init()
+  tabStore.restore()
+  ready.value = true
+
+  // 全局唤出（主进程快捷键 / 托盘）→ 打开命令面板
   window.api?.onToggleSearch(() => {
-    // Will be handled by the search component
     window.dispatchEvent(new CustomEvent('toggle-search'))
   })
 })
 </script>
 
 <template>
-  <AppLayout />
+  <AppLayout v-if="ready" />
+  <div v-else class="h-screen w-screen" style="background: var(--color-bg-base)"></div>
 </template>

@@ -1,37 +1,152 @@
-import { app, BrowserWindow, globalShortcut, shell } from 'electron'
+import { app, BrowserWindow, screen, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import type { AppPreferences, WindowState } from '@shared/preferences'
 import { windowService } from './services/windowService'
 import { hideMoyuPreview, registerAllIpc, setupMoyuPreview, setupWindowEvents } from './ipc'
+import { preferenceStore } from './services/preferenceStore'
+import { createTray, destroyTray, updateTray, type TrayHandlers } from './services/trayService'
+import { shortcutService } from './services/shortcutService'
+import { lifecycle } from './services/lifecycle'
+import { resourcePath } from './services/assetPath'
 
-function createWindow(): void {
-  const mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+let preferences: AppPreferences
+let resizing: ReturnType<typeof setTimeout> | undefined
+
+function overlapsVisibleScreen(state: WindowState): boolean {
+  if (state.x === undefined || state.y === undefined) return false
+  return screen.getAllDisplays().some((display) => {
+    const area = display.workArea
+    const overlapX = Math.min(state.x! + state.width, area.x + area.width) - Math.max(state.x!, area.x)
+    const overlapY = Math.min(state.y! + state.height, area.y + area.height) - Math.max(state.y!, area.y)
+    return overlapX >= 200 && overlapY >= 120
+  })
+}
+
+function windowOptions(state: WindowState): Electron.BrowserWindowConstructorOptions {
+  return {
+    ...(overlapsVisibleScreen(state) ? { x: state.x, y: state.y } : {}),
+    width: state.width,
+    height: state.height,
     minWidth: 960,
     minHeight: 640,
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
     backgroundColor: '#090a0d',
+    icon: resourcePath('icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false
     }
-  })
+  }
+}
+
+function saveWindowState(window: BrowserWindow, sync = false): void {
+  if (window.isDestroyed()) return
+  const bounds = window.getNormalBounds()
+  const state: WindowState = {
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
+    maximized: window.isMaximized()
+  }
+  if (sync) {
+    preferenceStore.patchSync({ window: state })
+    return
+  }
+  clearTimeout(resizing)
+  resizing = setTimeout(() => {
+    void preferenceStore.patch({ window: state }).catch(() => undefined)
+  }, 400)
+}
+
+function showWindow(): void {
+  const window = windowService.getMainWindow()
+  if (!window || window.isDestroyed()) return
+  if (!window.isVisible()) window.show()
+  window.focus()
+  syncTray()
+}
+
+function hideWindow(): void {
+  const window = windowService.getMainWindow()
+  if (!window || window.isDestroyed()) return
+  hideMoyuPreview(window)
+  window.hide()
+  syncTray()
+}
+
+function toggleBoss(): void {
+  const window = windowService.getMainWindow()
+  if (!window || window.isDestroyed()) return
+  if (window.isVisible() && window.isFocused()) {
+    hideWindow()
+  } else {
+    showWindow()
+  }
+}
+
+function summon(): void {
+  const window = windowService.getMainWindow()
+  if (!window || window.isDestroyed()) return
+  hideMoyuPreview(window)
+  if (!window.isVisible()) window.show()
+  window.focus()
+  window.webContents.send('global:toggle-search')
+  syncTray()
+}
+
+const trayHandlers: TrayHandlers = {
+  show: () => showWindow(),
+  hide: () => hideWindow(),
+  quit: () => lifecycle.quit()
+}
+
+function syncTray(): void {
+  const window = windowService.getMainWindow()
+  updateTray(
+    {
+      windowVisible: Boolean(window && !window.isDestroyed() && window.isVisible()),
+      bossKey: preferences.settings.bossKey,
+      summonKey: preferences.settings.summonKey
+    },
+    trayHandlers
+  )
+}
+
+function createWindow(state: WindowState): void {
+  const mainWindow = new BrowserWindow(windowOptions(state))
 
   windowService.setMainWindow(mainWindow)
   setupWindowEvents(mainWindow)
   setupMoyuPreview(mainWindow)
 
-  mainWindow.on('ready-to-show', () => {
+  mainWindow.once('ready-to-show', () => {
+    if (state.maximized) mainWindow.maximize()
     mainWindow.show()
+    syncTray()
+  })
+
+  mainWindow.on('show', () => syncTray())
+  mainWindow.on('hide', () => syncTray())
+  mainWindow.on('resize', () => saveWindowState(mainWindow))
+  mainWindow.on('move', () => saveWindowState(mainWindow))
+  mainWindow.on('maximize', () => saveWindowState(mainWindow))
+  mainWindow.on('unmaximize', () => saveWindowState(mainWindow))
+  mainWindow.on('close', (event) => {
+    saveWindowState(mainWindow, true)
+    if (preferences.settings.closeToTray && !lifecycle.isQuitting()) {
+      event.preventDefault()
+      mainWindow.hide()
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    if (/^https?:\/\//i.test(details.url)) void shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
@@ -42,28 +157,44 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.moyu.toolbox')
+const locked = app.requestSingleInstanceLock()
+if (!locked) {
+  app.quit()
+} else {
+  app.on('second-instance', () => showWindow())
 
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
+  app.whenReady().then(async () => {
+    electronApp.setAppUserModelId('com.moyu.toolbox')
+
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
+
+    preferences = await preferenceStore.get()
+
+    registerAllIpc()
+    shortcutService.setHandlers({ toggleBoss, summon })
+    const shortcutResult = shortcutService.apply(preferences.settings)
+    if (!shortcutResult.ok) console.warn('[moyu] 全局快捷键注册失败：', shortcutResult.error)
+    preferenceStore.subscribe((next) => {
+      preferences = next
+      syncTray()
+    })
+
+    createTray(trayHandlers, {
+      windowVisible: false,
+      bossKey: preferences.settings.bossKey,
+      summonKey: preferences.settings.summonKey
+    })
+
+    createWindow(preferences.window)
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow(preferences.window)
+      else showWindow()
+    })
   })
-
-  registerAllIpc()
-  createWindow()
-
-  // Global shortcut: Ctrl+K or Cmd+K
-  globalShortcut.register('CommandOrControl+K', () => {
-    const mainWindow = windowService.getMainWindow()
-    if (!mainWindow || mainWindow.isDestroyed()) return
-    hideMoyuPreview(mainWindow)
-    mainWindow.webContents.send('global:toggle-search')
-  })
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -71,6 +202,13 @@ app.on('window-all-closed', () => {
   }
 })
 
+app.on('before-quit', () => {
+  lifecycle.markQuitting()
+  shortcutService.dispose()
+  destroyTray()
+})
+
 app.on('will-quit', () => {
-  globalShortcut.unregisterAll()
+  shortcutService.dispose()
+  destroyTray()
 })

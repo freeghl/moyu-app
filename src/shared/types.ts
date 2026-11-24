@@ -1,3 +1,5 @@
+import type { Component } from 'vue'
+
 /** Tool category identifiers */
 export type ToolCategory =
   | 'dev'
@@ -8,7 +10,7 @@ export type ToolCategory =
   | 'ai'
 
 /** Navigation workspace items */
-export type WorkspaceItem = 'home' | 'all' | 'favorites' | 'recent'
+export type WorkspaceItem = 'home' | 'all' | 'favorites' | 'recent' | 'settings'
 
 /** Tool manifest definition */
 export interface ToolManifest {
@@ -18,7 +20,7 @@ export interface ToolManifest {
   icon: string
   category: ToolCategory
   keywords?: string[]
-  component: () => Promise<any>
+  component: () => Promise<Component>
 }
 
 /** Tab state */
