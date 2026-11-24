@@ -1,90 +1,78 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type { WorkspaceItem, ToolCategory, CategoryInfo } from '@shared/types'
+import { computed } from 'vue'
+import { CATEGORIES } from '@shared/categories'
+import type { ToolCategory, WorkspaceItem } from '@shared/types'
+import { usePrefsStore } from './prefsStore'
 
-export const categories: CategoryInfo[] = [
-  { id: 'dev', name: '开发工具', icon: 'code-bracket' },
-  { id: 'network', name: '网络工具', icon: 'globe-alt' },
-  { id: 'image', name: '图片工具', icon: 'photo' },
-  { id: 'file', name: '文件工具', icon: 'folder' },
-  { id: 'crypto', name: '加密工具', icon: 'lock-closed' },
-  { id: 'ai', name: 'AI 工具', icon: 'sparkles' }
-]
+/** 分类展示信息（保留原导出名，供侧边栏与首页复用） */
+export const categories = CATEGORIES
+
+const MAX_RECENT = 20
 
 export const useNavStore = defineStore('nav', () => {
-  const activeWorkspace = ref<WorkspaceItem>('home')
-  const activeCategory = ref<ToolCategory | null>(null)
-  const sidebarCollapsed = ref(false)
-  const collapsedCategories = ref<Set<ToolCategory>>(new Set())
-  const favorites = ref<Set<string>>(new Set())
-  const recentTools = ref<string[]>([])
+  const prefs = usePrefsStore()
+
+  const activeWorkspace = computed(() => prefs.state.session.workspace)
+  const activeCategory = computed(() => prefs.state.session.category)
+  const sidebarCollapsed = computed(() => prefs.state.session.sidebarCollapsed)
+  const favorites = computed(() => new Set(prefs.state.favorites))
+  const recentTools = computed(() => prefs.state.recentTools)
+  const collapsedCategories = computed(() => new Set(prefs.state.session.collapsedCategories))
 
   const isHome = computed(() => activeWorkspace.value === 'home' && !activeCategory.value)
+  const isSettings = computed(() => activeWorkspace.value === 'settings')
 
   function setWorkspace(item: WorkspaceItem): void {
-    activeWorkspace.value = item
-    activeCategory.value = null
+    prefs.patch({ session: { workspace: item, category: null } })
   }
 
   function setCategory(cat: ToolCategory): void {
-    activeCategory.value = cat
-    activeWorkspace.value = 'all'
+    prefs.patch({ session: { workspace: 'all', category: cat } })
+  }
+
+  /** 打开工具时离开设置页，避免用户以为点击没反应 */
+  function exitSettings(): void {
+    if (isSettings.value) setWorkspace('home')
   }
 
   function toggleSidebar(): void {
-    sidebarCollapsed.value = !sidebarCollapsed.value
+    prefs.patch({ session: { sidebarCollapsed: !sidebarCollapsed.value } })
   }
 
   function toggleCategoryCollapse(cat: ToolCategory): void {
-    if (collapsedCategories.value.has(cat)) {
-      collapsedCategories.value.delete(cat)
-    } else {
-      collapsedCategories.value.add(cat)
-    }
+    const current = prefs.state.session.collapsedCategories
+    const next = current.includes(cat) ? current.filter((item) => item !== cat) : [...current, cat]
+    prefs.patch({ session: { collapsedCategories: next } })
   }
 
   function toggleFavorite(toolId: string): void {
-    if (favorites.value.has(toolId)) {
-      favorites.value.delete(toolId)
-    } else {
-      favorites.value.add(toolId)
-    }
-    // Persist
-    localStorage.setItem('favorites', JSON.stringify([...favorites.value]))
+    const current = prefs.state.favorites
+    const next = current.includes(toolId)
+      ? current.filter((id) => id !== toolId)
+      : [...current, toolId]
+    prefs.patch({ favorites: next })
   }
 
   function addRecent(toolId: string): void {
-    recentTools.value = [toolId, ...recentTools.value.filter((id) => id !== toolId)].slice(0, 20)
-    localStorage.setItem('recentTools', JSON.stringify(recentTools.value))
-  }
-
-  // Load from localStorage
-  function init(): void {
-    try {
-      const savedFavorites = localStorage.getItem('favorites')
-      if (savedFavorites) favorites.value = new Set(JSON.parse(savedFavorites))
-
-      const savedRecent = localStorage.getItem('recentTools')
-      if (savedRecent) recentTools.value = JSON.parse(savedRecent)
-    } catch {
-      // ignore
-    }
+    const next = [toolId, ...prefs.state.recentTools.filter((id) => id !== toolId)].slice(0, MAX_RECENT)
+    prefs.patch({ recentTools: next })
   }
 
   return {
     activeWorkspace,
     activeCategory,
     sidebarCollapsed,
-    collapsedCategories,
     favorites,
     recentTools,
+    collapsedCategories,
     isHome,
+    isSettings,
     setWorkspace,
     setCategory,
+    exitSettings,
     toggleSidebar,
     toggleCategoryCollapse,
     toggleFavorite,
-    addRecent,
-    init
+    addRecent
   }
 })

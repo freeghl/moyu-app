@@ -1,7 +1,7 @@
 {
   "name": "moyu-app",
   "version": "1.0.0",
-  "description": "摸鱼工具箱 - 桌面端开发者工具集合",
+  "description": "摸鱼神器 - 伪装成IDE的多站点浏览器",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -10,7 +10,7 @@
     "postinstall": "electron-builder install-app-deps",
     "type-check": "vue-tsc --noEmit"
   },
-  "keywords": ["moyu", "toolbox", "developer-tools"],
+  "keywords": ["moyu", "browser", "disguise", "electron"],
   "author": "",
   "license": "MIT",
   "devDependencies": {

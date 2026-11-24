@@ -57,10 +57,10 @@ function openSearch() {
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold tracking-tight" style="color: var(--color-text-primary)">
-            桌面端工具集合应用
+            摸鱼神器
           </h1>
           <p class="text-xs mt-1.5 leading-relaxed" style="color: var(--color-text-tertiary)">
-            固定应用外壳 + 动态工具工作区 · 快捷键
+            伪装成 IDE 的多站点浏览器 · 快捷键
             <span class="kbd-badge mx-1">Ctrl</span>
             <span class="kbd-badge mr-1">K</span>
             快速定位或打开工具

@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { toolRegistry } from '../registry'
 import { useTabStore, useNavStore } from '../stores'
+import { categoryName } from '@shared/categories'
 import type { ToolManifest } from '@shared/types'
 
 const tabStore = useTabStore()
@@ -14,9 +15,20 @@ const inputRef = ref<HTMLInputElement | null>(null)
 
 const results = computed<ToolManifest[]>(() => {
   const q = query.value.trim()
-  if (!q) return toolRegistry.getAll()
-  return toolRegistry.search(q)
+  const recent = navStore.recentTools
+  if (!q) {
+    const recentTools = recent
+      .map((id) => toolRegistry.get(id))
+      .filter((tool): tool is ToolManifest => Boolean(tool))
+    const rest = toolRegistry.getAll().filter((tool) => !recent.includes(tool.id))
+    return [...recentTools, ...rest]
+  }
+  return toolRegistry.search(q, recent)
 })
+
+function isRecent(tool: ToolManifest): boolean {
+  return navStore.recentTools.includes(tool.id)
+}
 
 watch(query, () => {
   selectedIndex.value = 0
@@ -32,6 +44,7 @@ function toggle() {
 }
 
 function selectTool(tool: ToolManifest) {
+  navStore.exitSettings()
   tabStore.openTool(tool.id)
   navStore.addRecent(tool.id)
   isOpen.value = false
@@ -86,6 +99,10 @@ onUnmounted(() => {
     <Transition name="fade">
       <div
         v-if="isOpen"
+        data-search-palette
+        role="dialog"
+        aria-modal="true"
+        aria-label="命令面板"
         class="fixed inset-0 z-50 flex items-start justify-center pt-[14vh] select-none"
         style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"
         @click.self="isOpen = false"
@@ -154,8 +171,10 @@ onUnmounted(() => {
 
               <!-- Category Tag -->
               <span class="text-[10px] font-mono px-2 py-0.5 rounded-md text-zinc-400 shrink-0" style="background: var(--color-bg-muted)">
-                {{ tool.category }}
+                {{ categoryName(tool.category) }}
               </span>
+
+              <span v-if="!query.trim() && isRecent(tool)" class="text-[10px] shrink-0 text-amber-400/80">最近</span>
 
               <!-- Enter indicator -->
               <svg

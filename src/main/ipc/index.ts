@@ -1,10 +1,12 @@
 import { registerWindowIpc } from './windowIpc'
-import { registerMoyuPreviewIpc } from './moyuPreviewIpc'
+import { registerSitePreviewIpc } from './sitePreviewIpc'
+import { registerPreferencesIpc } from './preferencesIpc'
 
 export function registerAllIpc(): void {
   registerWindowIpc()
-  registerMoyuPreviewIpc()
+  registerSitePreviewIpc()
+  registerPreferencesIpc()
 }
 
 export { setupWindowEvents } from './windowIpc'
-export { setupMoyuPreview, hideMoyuPreview } from './moyuPreviewIpc'
+export { setupSitePreview, hideSitePreview } from './sitePreviewIpc'
