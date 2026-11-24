@@ -18,14 +18,14 @@ const api: AppAPI = {
     isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
     onMaximizedChanged: (callback) => subscribe('window:maximized-changed', callback)
   },
-  moyuPreview: {
-    show: (request) => ipcRenderer.invoke('moyu-preview:show', request),
-    hide: () => ipcRenderer.invoke('moyu-preview:hide'),
-    pin: (pinned) => ipcRenderer.invoke('moyu-preview:pin', pinned),
-    command: (command) => ipcRenderer.invoke('moyu-preview:command', command),
-    listSites: () => ipcRenderer.invoke('moyu-preview:list-sites'),
-    changeSite: (change) => ipcRenderer.invoke('moyu-preview:change-site', change),
-    onState: (callback) => subscribe('moyu-preview:state', callback)
+  sitePreview: {
+    show: (request) => ipcRenderer.invoke('site-preview:show', request),
+    hide: () => ipcRenderer.invoke('site-preview:hide'),
+    pin: (pinned) => ipcRenderer.invoke('site-preview:pin', pinned),
+    command: (command) => ipcRenderer.invoke('site-preview:command', command),
+    listSites: () => ipcRenderer.invoke('site-preview:list-sites'),
+    changeSite: (change) => ipcRenderer.invoke('site-preview:change-site', change),
+    onState: (callback) => subscribe('site-preview:state', callback)
   },
   prefs: {
     get: () => ipcRenderer.invoke('prefs:get'),

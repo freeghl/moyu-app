@@ -1,5 +1,5 @@
 import { screen, WebContentsView, type BrowserWindow, type Input, type Point, type Rectangle } from 'electron'
-import type { MoyuPreviewRequest, PreviewCommand, PreviewPhase, PreviewRect, PreviewState } from '@shared/moyuPreview'
+import type { PreviewCommand, PreviewPhase, PreviewRect, SitePreviewRequest, SitePreviewState } from '@shared/sitePreview'
 
 function contains(bounds: Rectangle, point: Point): boolean {
   return point.x >= bounds.x && point.x < bounds.x + bounds.width &&
@@ -24,7 +24,7 @@ function isHttps(url: string): boolean {
 /** 全屏时保留顶部标题栏高度，保证窗口按钮与 Esc 提示始终可点 */
 const TITLEBAR_HEIGHT = 42
 
-export class MoyuPreviewService {
+export class SitePreviewService {
   private view?: WebContentsView
   private cursorCheck?: ReturnType<typeof setInterval>
   private siteUrl?: string
@@ -54,7 +54,7 @@ export class MoyuPreviewService {
     })
   }
 
-  async show(request: MoyuPreviewRequest, url: string): Promise<void> {
+  async show(request: SitePreviewRequest, url: string): Promise<void> {
     if (this.window.isDestroyed() || !this.window.isVisible() || !this.window.isFocused()) return
 
     const windowBounds = this.window.getContentBounds()
@@ -155,13 +155,13 @@ export class MoyuPreviewService {
 
   private emitState(): void {
     if (this.window.isDestroyed()) return
-    const state: PreviewState = {
+    const state: SitePreviewState = {
       phase: this.phase,
       siteId: this.siteId,
       pinned: this.pinned,
       fullscreen: this.fullscreen
     }
-    this.window.webContents.send('moyu-preview:state', state)
+    this.window.webContents.send('site-preview:state', state)
   }
 
   private reset(): void {
@@ -245,7 +245,7 @@ export class MoyuPreviewService {
   private createView(): WebContentsView {
     const view = new WebContentsView({
       webPreferences: {
-        partition: 'moyu-preview',
+        partition: 'site-preview',
         sandbox: true,
         contextIsolation: true,
         nodeIntegration: false,

@@ -11,7 +11,7 @@ const METHODS: { id: Method; label: string }[] = [
 ]
 
 const state = useToolState('encoding-converter', {
-  input: '摸鱼工具箱 moyu',
+  input: 'DevBox 编码测试',
   method: 'base64' as Method,
   decode: false
 })

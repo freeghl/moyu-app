@@ -167,8 +167,8 @@ function hideToTray(): void {
         <div class="space-y-3 px-4 py-4">
           <div
             v-for="item in [
-              { field: 'bossKey' as const, title: '老板键', desc: '按下立刻隐藏窗口，再按一次回来' },
-              { field: 'summonKey' as const, title: '全局唤出', desc: '在任何程序里唤出窗口并打开命令面板' }
+              { field: 'bossKey' as const, title: '快速隐藏', desc: '全局生效，按下立即隐藏窗口，再按一次恢复' },
+              { field: 'summonKey' as const, title: '全局唤起', desc: '在任何程序里唤起窗口并打开命令面板' }
             ]"
             :key="item.field"
             class="flex items-center justify-between gap-6"

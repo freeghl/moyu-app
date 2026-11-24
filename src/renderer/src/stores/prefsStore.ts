@@ -11,6 +11,36 @@ import {
 
 const FLUSH_DELAY = 250
 
+/** 工具改名后把旧 id 的数据接过来，避免用户重启后丢掉标签和工具内状态 */
+const LEGACY_TOOL_IDS: Record<string, string> = {
+  'moyu-resources': 'reference-peek'
+}
+
+function migrateToolIds(preferences: AppPreferences): boolean {
+  let changed = false
+  const map = (id: string): string => {
+    const next = LEGACY_TOOL_IDS[id]
+    if (!next) return id
+    changed = true
+    return next
+  }
+
+  preferences.session.tabs = preferences.session.tabs.map(map)
+  if (preferences.session.activeToolId) preferences.session.activeToolId = map(preferences.session.activeToolId)
+  preferences.favorites = Array.from(new Set(preferences.favorites.map(map)))
+  preferences.recentTools = Array.from(new Set(preferences.recentTools.map(map)))
+
+  for (const [legacyId, nextId] of Object.entries(LEGACY_TOOL_IDS)) {
+    const legacyState = preferences.tools[legacyId]
+    if (!legacyState) continue
+    if (!preferences.tools[nextId]) preferences.tools[nextId] = legacyState
+    delete preferences.tools[legacyId]
+    changed = true
+  }
+
+  return changed
+}
+
 export const usePrefsStore = defineStore('prefs', () => {
   const state = ref<AppPreferences>(createDefaultPreferences())
   const ready = ref(false)
@@ -22,7 +52,19 @@ export const usePrefsStore = defineStore('prefs', () => {
   async function init(): Promise<void> {
     try {
       const saved = await window.api?.prefs.get()
-      if (saved) state.value = saved
+      if (saved) {
+        const migrated = migrateToolIds(saved)
+        state.value = saved
+        if (migrated) {
+          pending = mergePatches(pending, {
+            session: saved.session,
+            favorites: saved.favorites,
+            recentTools: saved.recentTools,
+            tools: saved.tools
+          })
+          void flush()
+        }
+      }
     } catch {
       // 忽略，使用默认偏好
     }

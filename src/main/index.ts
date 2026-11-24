@@ -3,7 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import type { AppPreferences, WindowState } from '@shared/preferences'
 import { windowService } from './services/windowService'
-import { hideMoyuPreview, registerAllIpc, setupMoyuPreview, setupWindowEvents } from './ipc'
+import { hideSitePreview, registerAllIpc, setupSitePreview, setupWindowEvents } from './ipc'
 import { preferenceStore } from './services/preferenceStore'
 import { createTray, destroyTray, updateTray, type TrayHandlers } from './services/trayService'
 import { shortcutService } from './services/shortcutService'
@@ -75,7 +75,7 @@ function showWindow(): void {
 function hideWindow(): void {
   const window = windowService.getMainWindow()
   if (!window || window.isDestroyed()) return
-  hideMoyuPreview(window)
+  hideSitePreview(window)
   window.hide()
   syncTray()
 }
@@ -93,7 +93,7 @@ function toggleBoss(): void {
 function summon(): void {
   const window = windowService.getMainWindow()
   if (!window || window.isDestroyed()) return
-  hideMoyuPreview(window)
+  hideSitePreview(window)
   if (!window.isVisible()) window.show()
   window.focus()
   window.webContents.send('global:toggle-search')
@@ -123,7 +123,7 @@ function createWindow(state: WindowState): void {
 
   windowService.setMainWindow(mainWindow)
   setupWindowEvents(mainWindow)
-  setupMoyuPreview(mainWindow)
+  setupSitePreview(mainWindow)
 
   mainWindow.once('ready-to-show', () => {
     if (state.maximized) mainWindow.maximize()
@@ -164,7 +164,7 @@ if (!locked) {
   app.on('second-instance', () => showWindow())
 
   app.whenReady().then(async () => {
-    electronApp.setAppUserModelId('com.moyu.toolbox')
+    electronApp.setAppUserModelId('com.devbox.app')
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
@@ -175,7 +175,7 @@ if (!locked) {
     registerAllIpc()
     shortcutService.setHandlers({ toggleBoss, summon })
     const shortcutResult = shortcutService.apply(preferences.settings)
-    if (!shortcutResult.ok) console.warn('[moyu] 全局快捷键注册失败：', shortcutResult.error)
+    if (!shortcutResult.ok) console.warn('[devbox] 全局快捷键注册失败：', shortcutResult.error)
     preferenceStore.subscribe((next) => {
       preferences = next
       syncTray()

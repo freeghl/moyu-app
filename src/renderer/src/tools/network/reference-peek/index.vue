@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type {
-  MoyuPreviewRequest,
-  MoyuSite,
-  MoyuSiteChange,
-  MoyuSiteChangeResult,
   PreviewRect,
-  PreviewState
-} from '@shared/moyuPreview'
+  Site,
+  SiteChange,
+  SiteChangeResult,
+  SitePreviewRequest,
+  SitePreviewState
+} from '@shared/sitePreview'
 import { useTabStore } from '../../../stores'
 import { useToolState } from '../../../utils/useToolState'
 import WebsiteManager from './WebsiteManager.vue'
@@ -28,10 +28,10 @@ formatDuration(90)
 `
 
 const tabStore = useTabStore()
-const state = useToolState('moyu-resources', { code: DEFAULT_CODE, siteId: '' })
+const state = useToolState('reference-peek', { code: DEFAULT_CODE, siteId: '' })
 
-const active = computed(() => tabStore.activeTab?.toolId === 'moyu-resources')
-const sites = ref<MoyuSite[] | null>(null)
+const active = computed(() => tabStore.activeTab?.toolId === 'reference-peek')
+const sites = ref<Site[] | null>(null)
 const loadingSites = ref(false)
 const editor = ref<HTMLTextAreaElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
@@ -41,7 +41,7 @@ const managerOpen = ref(false)
 const scrollTop = ref(0)
 const previewError = ref('')
 
-const preview = ref<PreviewState>({ phase: 'hidden', pinned: false, fullscreen: false })
+const preview = ref<SitePreviewState>({ phase: 'hidden', pinned: false, fullscreen: false })
 
 const code = computed({
   get: () => state.value.code,
@@ -74,12 +74,12 @@ function cancelHover(): void {
 }
 
 async function showPreview(mode: 'peek' | 'pinned'): Promise<void> {
-  const api = window.api?.moyuPreview
+  const api = window.api?.sitePreview
   const element = editor.value
   const siteId = selectedId.value
   if (!api || !element || !siteId) return
 
-  const request: MoyuPreviewRequest = {
+  const request: SitePreviewRequest = {
     siteId,
     editor: rect(element),
     chromeTop: CHROME_HEIGHT,
@@ -116,7 +116,7 @@ function queuePreview(event: PointerEvent): void {
 function hidePreview(): void {
   cancelHover()
   previewError.value = ''
-  void window.api?.moyuPreview.hide()
+  void window.api?.sitePreview.hide()
 }
 
 function togglePinned(): void {
@@ -126,14 +126,14 @@ function togglePinned(): void {
     return
   }
   if (preview.value.pinned) {
-    void window.api?.moyuPreview.command('close')
+    void window.api?.sitePreview.command('close')
     return
   }
-  void window.api?.moyuPreview.pin(true)
+  void window.api?.sitePreview.pin(true)
 }
 
 function runCommand(command: 'back' | 'forward' | 'reload' | 'fullscreen' | 'close'): void {
-  void window.api?.moyuPreview.command(command)
+  void window.api?.sitePreview.command(command)
 }
 
 function togglePinState(): void {
@@ -141,7 +141,7 @@ function togglePinState(): void {
     runCommand('close')
     return
   }
-  void window.api?.moyuPreview.pin(true)
+  void window.api?.sitePreview.pin(true)
 }
 
 function togglePicker(): void {
@@ -157,15 +157,15 @@ function chooseSite(id: string): void {
   void showPreview('pinned')
 }
 
-function updateSites(updated: MoyuSite[], newSelection?: string): void {
+function updateSites(updated: Site[], newSelection?: string): void {
   sites.value = updated
   const preferred = newSelection ?? selectedId.value
   const next = updated.find((site) => site.id === preferred)?.id ?? updated[0]?.id ?? ''
   selectedId.value = next
 }
 
-async function saveChange(change: MoyuSiteChange): Promise<MoyuSiteChangeResult> {
-  const api = window.api?.moyuPreview
+async function saveChange(change: SiteChange): Promise<SiteChangeResult> {
+  const api = window.api?.sitePreview
   if (!api) return { error: '网站管理不可用' }
   const result = await api.changeSite(change)
   if ('sites' in result) updateSites(result.sites, result.selectedId)
@@ -173,7 +173,7 @@ async function saveChange(change: MoyuSiteChange): Promise<MoyuSiteChangeResult>
 }
 
 async function loadSites(): Promise<void> {
-  const api = window.api?.moyuPreview
+  const api = window.api?.sitePreview
   if (!api || loadingSites.value) return
   loadingSites.value = true
   try {
@@ -237,7 +237,7 @@ watch(managerOpen, (open) => {
 })
 
 onMounted(() => {
-  unsubscribeState = window.api?.moyuPreview.onState((next) => {
+  unsubscribeState = window.api?.sitePreview.onState((next) => {
     preview.value = next
     if (next.phase === 'ready' || next.phase === 'hidden') previewError.value = ''
   })

@@ -1,4 +1,4 @@
-import type { MoyuPreviewAPI } from './moyuPreview'
+import type { SitePreviewAPI } from './sitePreview'
 import type { AppPreferences, PreferencesPatch } from './preferences'
 
 export interface WindowAPI {
@@ -33,7 +33,7 @@ export interface ShortcutsAPI {
 
 export interface AppAPI {
   window: WindowAPI
-  moyuPreview: MoyuPreviewAPI
+  sitePreview: SitePreviewAPI
   prefs: PreferencesAPI
   app: AppShellAPI
   shortcuts: ShortcutsAPI

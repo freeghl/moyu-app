@@ -54,7 +54,7 @@ function openSearch() {
         </svg>
       </div>
       <span class="text-xs font-semibold tracking-wide" style="color: var(--color-text-primary)">
-        Moyu Toolbox
+        DevBox
       </span>
     </div>
 

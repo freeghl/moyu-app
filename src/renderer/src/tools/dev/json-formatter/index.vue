@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useToolState } from '../../../utils/useToolState'
 
 const state = useToolState('json-formatter', {
-  input: '{"name":"moyu","tags":["toolbox","electron"],"version":1}',
+  input: '{"name":"devbox","tags":["toolbox","electron"],"version":1}',
   indent: 2
 })
 

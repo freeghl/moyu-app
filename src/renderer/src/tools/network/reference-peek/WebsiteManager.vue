@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import type { MoyuSite, MoyuSiteChange, MoyuSiteChangeResult } from '@shared/moyuPreview'
+import type { Site, SiteChange, SiteChangeResult } from '@shared/sitePreview'
 
 const props = defineProps<{
-  sites: MoyuSite[] | null
+  sites: Site[] | null
   loading: boolean
-  saveChange: (change: MoyuSiteChange) => Promise<MoyuSiteChangeResult>
+  saveChange: (change: SiteChange) => Promise<SiteChangeResult>
 }>()
 const emit = defineEmits<{
   close: []
@@ -30,7 +30,7 @@ function clearForm(): void {
   error.value = ''
 }
 
-function edit(site: MoyuSite): void {
+function edit(site: Site): void {
   deletingId.value = undefined
   editingId.value = site.id
   name.value = site.name
@@ -39,12 +39,12 @@ function edit(site: MoyuSite): void {
   nameInput.value?.focus()
 }
 
-function confirmRemoval(site: MoyuSite): void {
+function confirmRemoval(site: Site): void {
   deletingId.value = site.id
   error.value = ''
 }
 
-async function changeSite(change: MoyuSiteChange): Promise<void> {
+async function changeSite(change: SiteChange): Promise<void> {
   if (saving.value) return
 
   saving.value = true

@@ -29,17 +29,17 @@ function buildMenu(state: TrayState, handlers: TrayHandlers): Menu {
       click: () => (state.windowVisible ? handlers.hide() : handlers.show())
     },
     { type: 'separator' },
-    { label: `老板键：${acceleratorLabel(state.bossKey)}`, enabled: false },
-    { label: `全局唤出：${acceleratorLabel(state.summonKey)}`, enabled: false },
+    { label: `快速隐藏：${acceleratorLabel(state.bossKey)}`, enabled: false },
+    { label: `全局唤起：${acceleratorLabel(state.summonKey)}`, enabled: false },
     { type: 'separator' },
-    { label: '退出摸鱼工具箱', click: handlers.quit }
+    { label: '退出 DevBox', click: handlers.quit }
   ])
 }
 
 export function createTray(handlers: TrayHandlers, state: TrayState): Tray {
   const image = nativeImage.createFromPath(resourcePath('tray.png'))
   tray = new Tray(image.isEmpty() ? nativeImage.createEmpty() : image)
-  tray.setToolTip('摸鱼工具箱')
+  tray.setToolTip('DevBox')
   tray.setContextMenu(buildMenu(state, handlers))
   tray.on('click', () => handlers.show())
   return tray

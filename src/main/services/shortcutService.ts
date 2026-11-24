@@ -28,7 +28,7 @@ class ShortcutService {
       summonKey: keys.summonKey.trim()
     }
     if (wanted.bossKey && wanted.summonKey && wanted.bossKey === wanted.summonKey) {
-      return { ok: false, error: '老板键与全局唤出不能使用同一个组合' }
+      return { ok: false, error: '两个快捷键不能使用同一个组合' }
     }
 
     const previous = { ...this.registered }
