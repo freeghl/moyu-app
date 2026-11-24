@@ -2,7 +2,7 @@ import { app, BrowserWindow, globalShortcut, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { windowService } from './services/windowService'
-import { registerAllIpc, setupWindowEvents } from './ipc'
+import { hideMoyuPreview, registerAllIpc, setupMoyuPreview, setupWindowEvents } from './ipc'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -24,6 +24,7 @@ function createWindow(): void {
 
   windowService.setMainWindow(mainWindow)
   setupWindowEvents(mainWindow)
+  setupMoyuPreview(mainWindow)
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -54,7 +55,9 @@ app.whenReady().then(() => {
   // Global shortcut: Ctrl+K or Cmd+K
   globalShortcut.register('CommandOrControl+K', () => {
     const mainWindow = windowService.getMainWindow()
-    mainWindow?.webContents.send('global:toggle-search')
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    hideMoyuPreview(mainWindow)
+    mainWindow.webContents.send('global:toggle-search')
   })
 
   app.on('activate', () => {

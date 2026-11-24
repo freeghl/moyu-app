@@ -1,4 +1,5 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
+import type { MoyuPreviewAPI } from '@shared/moyuPreview'
 
 interface WindowAPI {
   minimize: () => Promise<void>
@@ -10,6 +11,7 @@ interface WindowAPI {
 
 interface API {
   window: WindowAPI
+  moyuPreview: MoyuPreviewAPI
   onToggleSearch: (callback: () => void) => void
 }
 
