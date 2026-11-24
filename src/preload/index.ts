@@ -14,7 +14,9 @@ const api = {
   },
   moyuPreview: {
     show: (request) => ipcRenderer.invoke('moyu-preview:show', request),
-    hide: () => ipcRenderer.invoke('moyu-preview:hide')
+    hide: () => ipcRenderer.invoke('moyu-preview:hide'),
+    listSites: () => ipcRenderer.invoke('moyu-preview:list-sites'),
+    changeSite: (change) => ipcRenderer.invoke('moyu-preview:change-site', change)
   } satisfies MoyuPreviewAPI,
   onToggleSearch: (callback: () => void): void => {
     ipcRenderer.on('global:toggle-search', () => callback())

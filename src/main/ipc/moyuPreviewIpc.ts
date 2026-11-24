@@ -1,6 +1,7 @@
 import { ipcMain, type BrowserWindow, type IpcMainInvokeEvent } from 'electron'
-import type { MoyuPreviewRequest } from '@shared/moyuPreview'
+import type { MoyuPreviewRequest, MoyuSiteChange } from '@shared/moyuPreview'
 import { MoyuPreviewService } from '../services/moyuPreviewService'
+import { moyuSiteStore } from '../services/moyuSiteStore'
 
 const previews = new Map<number, MoyuPreviewService>()
 
@@ -20,6 +21,18 @@ function getPreview(event: IpcMainInvokeEvent): MoyuPreviewService | undefined {
 }
 
 export function registerMoyuPreviewIpc(): void {
-  ipcMain.handle('moyu-preview:show', (event, request: MoyuPreviewRequest) => getPreview(event)?.show(request))
+  ipcMain.handle('moyu-preview:show', async (event, request: MoyuPreviewRequest) => {
+    const preview = getPreview(event)
+    if (!preview) return
+    const sites = await moyuSiteStore.list()
+    const site = sites.find((item) => item.id === request?.siteId)
+    if (site) await preview.show(request, site.url)
+  })
   ipcMain.handle('moyu-preview:hide', (event) => getPreview(event)?.hide())
+  ipcMain.handle('moyu-preview:list-sites', (event) => {
+    if (getPreview(event)) return moyuSiteStore.list()
+  })
+  ipcMain.handle('moyu-preview:change-site', (event, change: MoyuSiteChange) => {
+    if (getPreview(event)) return moyuSiteStore.change(change)
+  })
 }

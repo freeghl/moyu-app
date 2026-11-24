@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { moyuSites, type PreviewRect } from '@shared/moyuPreview'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import type { MoyuSite, MoyuSiteChange, MoyuSiteChangeResult, PreviewRect } from '@shared/moyuPreview'
 import { useTabStore } from '../../../stores'
+import WebsiteManager from './WebsiteManager.vue'
 
 const tabStore = useTabStore()
 const active = computed(() => tabStore.activeTab?.toolId === 'moyu-resources')
-const site = ref<(typeof moyuSites)[number]>(moyuSites[0])
+const sites = ref<MoyuSite[] | null>(null)
+const loadingSites = ref(false)
+const selectedId = ref<string>()
 const editor = ref<HTMLTextAreaElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
 const picker = ref<HTMLElement | null>(null)
 const pickerOpen = ref(false)
+const managerOpen = ref(false)
 const loadFailed = ref(false)
 const scrollTop = ref(0)
 const code = ref(`export function formatDuration(totalSeconds: number): string {
@@ -38,23 +42,23 @@ function cancelHover(): void {
 }
 
 function queuePreview(event: PointerEvent): void {
-  if (event.pointerType === 'touch' || event.pointerType === 'pen' || !active.value || pickerOpen.value) return
+  if (event.pointerType === 'touch' || event.pointerType === 'pen' || !active.value || pickerOpen.value || managerOpen.value || !selectedId.value) return
   cancelHover()
   hoverTimer = setTimeout(() => {
     hoverTimer = undefined
-    if (!active.value || pickerOpen.value || !editor.value || !trigger.value) return
+    const siteId = selectedId.value
+    if (!active.value || pickerOpen.value || managerOpen.value || !siteId || !editor.value || !trigger.value) return
     const bounds = rect(trigger.value)
     const hit = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
     if (!trigger.value.contains(hit)) return
 
-    const { url } = site.value
     loadFailed.value = false
     void window.api?.moyuPreview.show({
-      url,
+      siteId,
       editor: rect(editor.value),
       trigger: bounds
     }).catch(() => {
-      if (site.value.url === url) loadFailed.value = true
+      if (selectedId.value === siteId) loadFailed.value = true
     })
   }, 300)
 }
@@ -69,11 +73,50 @@ function togglePicker(): void {
   pickerOpen.value = !pickerOpen.value
 }
 
-function chooseSite(nextSite: (typeof moyuSites)[number]): void {
-  site.value = nextSite
+function chooseSite(id: string): void {
+  selectedId.value = id
   pickerOpen.value = false
   loadFailed.value = false
   trigger.value?.focus()
+}
+
+function updateSites(updated: MoyuSite[], newSelection?: string): void {
+  sites.value = updated
+  const preferred = newSelection ?? selectedId.value
+  selectedId.value = updated.find((site) => site.id === preferred)?.id ?? updated[0]?.id
+  loadFailed.value = false
+}
+
+async function saveChange(change: MoyuSiteChange): Promise<MoyuSiteChangeResult> {
+  const api = window.api?.moyuPreview
+  if (!api) return { error: '网站管理不可用' }
+  const result = await api.changeSite(change)
+  if ('sites' in result) updateSites(result.sites, result.selectedId)
+  return result
+}
+
+async function loadSites(): Promise<void> {
+  const api = window.api?.moyuPreview
+  if (!api || loadingSites.value) return
+  loadingSites.value = true
+  try {
+    updateSites(await api.listSites())
+  } catch {
+    sites.value = null
+  } finally {
+    loadingSites.value = false
+  }
+}
+
+function openManager(): void {
+  hidePreview()
+  pickerOpen.value = false
+  managerOpen.value = true
+}
+
+function closeManager(): void {
+  managerOpen.value = false
+  void nextTick(() => trigger.value?.focus())
 }
 
 function closePickerOnBlur(event: FocusEvent): void {
@@ -88,16 +131,19 @@ watch(active, (isActive) => {
 }, { flush: 'sync' })
 
 onBeforeUnmount(hidePreview)
+onMounted(loadSites)
 </script>
 
 <template>
   <section class="flex h-full min-h-0 flex-col bg-(--color-bg-base)" @keydown.esc="hidePreview">
-    <header class="flex h-9 shrink-0 items-center justify-between border-b border-(--color-border-muted) px-4 text-xs text-(--color-text-secondary)">
+    <WebsiteManager v-if="managerOpen" :sites="sites" :loading="loadingSites" :save-change="saveChange" @reload="loadSites" @close="closeManager" />
+
+    <header v-show="!managerOpen" class="flex h-9 shrink-0 items-center justify-between border-b border-(--color-border-muted) px-4 text-xs text-(--color-text-secondary)">
       <span class="font-mono">format-duration.ts</span>
       <span v-if="loadFailed" role="status">站点加载失败，可重新悬停重试。</span>
     </header>
 
-    <div class="flex min-h-0 flex-1 font-mono text-sm leading-6">
+    <div v-show="!managerOpen" class="flex min-h-0 flex-1 font-mono text-sm leading-6">
       <div class="relative w-12 shrink-0 bg-(--color-bg-elevated) text-(--color-text-tertiary)">
         <div class="absolute inset-x-0 top-0 bottom-8 overflow-hidden" aria-hidden="true">
           <div class="pt-3 pr-3 text-right" :style="{ transform: 'translateY(-' + scrollTop + 'px)' }">
@@ -116,15 +162,18 @@ onBeforeUnmount(hidePreview)
             @pointerleave="cancelHover"
             @click="togglePicker"
           >⋯</button>
-          <ul v-if="pickerOpen" class="absolute bottom-full left-1 z-10 w-52 rounded-md border border-(--color-border-default) bg-(--color-bg-surface) p-1 text-xs shadow-xl">
-            <li v-for="item in moyuSites" :key="item.url">
+          <ul v-if="pickerOpen" class="absolute bottom-full left-1 z-10 max-h-[60vh] w-52 overflow-auto rounded-md border border-(--color-border-default) bg-(--color-bg-surface) p-1 text-xs shadow-xl">
+            <li v-for="item in sites" :key="item.id">
               <button
                 type="button"
                 class="w-full cursor-pointer rounded px-2 py-1.5 text-left hover:bg-(--color-bg-overlay) focus-visible:bg-(--color-bg-overlay)"
-                :class="item.url === site.url ? 'text-(--color-accent-hover)' : 'text-(--color-text-secondary)'"
-                :aria-pressed="item.url === site.url"
-                @click="chooseSite(item)"
+                :class="item.id === selectedId ? 'text-(--color-accent-hover)' : 'text-(--color-text-secondary)'"
+                :aria-pressed="item.id === selectedId"
+                @click="chooseSite(item.id)"
               >{{ item.name }}</button>
+            </li>
+            <li class="border-t border-(--color-border-default)">
+              <button type="button" class="w-full cursor-pointer rounded px-2 py-1.5 text-left text-(--color-text-secondary) hover:bg-(--color-bg-overlay) focus-visible:bg-(--color-bg-overlay)" @click="openManager">管理网站</button>
             </li>
           </ul>
         </div>

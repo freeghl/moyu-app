@@ -1,5 +1,5 @@
 import { screen, WebContentsView, type BrowserWindow, type Input, type Point, type Rectangle } from 'electron'
-import { moyuSites, type MoyuPreviewRequest, type PreviewRect } from '@shared/moyuPreview'
+import type { MoyuPreviewRequest, PreviewRect } from '@shared/moyuPreview'
 
 function contains(bounds: Rectangle, point: Point): boolean {
   return point.x >= bounds.x && point.x < bounds.x + bounds.width &&
@@ -24,7 +24,7 @@ function isHttps(url: string): boolean {
 export class MoyuPreviewService {
   private view?: WebContentsView
   private cursorCheck?: ReturnType<typeof setInterval>
-  private siteUrl?: MoyuPreviewRequest['url']
+  private siteUrl?: string
   private siteLoad?: Promise<void>
 
   constructor(private readonly window: BrowserWindow) {
@@ -44,29 +44,28 @@ export class MoyuPreviewService {
     })
   }
 
-  async show(request: MoyuPreviewRequest): Promise<void> {
-    if (!moyuSites.some((site) => site.url === request?.url)) return
-    if (!this.window.isVisible() || !this.window.isFocused()) return
+  async show(request: MoyuPreviewRequest, url: string): Promise<void> {
+    if (this.window.isDestroyed() || !this.window.isVisible() || !this.window.isFocused()) return
 
     const windowBounds = this.window.getContentBounds()
     const zoom = this.window.webContents.getZoomFactor()
     const editor = toViewBounds(request.editor, zoom, windowBounds)
     const trigger = toViewBounds(request.trigger, zoom, windowBounds)
     if (!editor || !trigger || !contains(trigger, this.getCursorPosition())) return
-    if (this.cursorCheck && this.siteUrl === request.url) return
+    if (this.cursorCheck && this.siteUrl === url) return
 
     this.hide()
     const view = this.view ?? this.createView()
     view.setBounds(editor)
-    view.setVisible(this.siteUrl === request.url && !this.siteLoad)
+    view.setVisible(this.siteUrl === url && !this.siteLoad)
     this.cursorCheck = setInterval(() => {
       const cursor = this.getCursorPosition()
       if (!contains(editor, cursor) && !contains(trigger, cursor)) this.hide()
     }, 32)
 
-    if (this.siteUrl === request.url) return
-    this.siteUrl = request.url
-    const loading = view.webContents.loadURL(request.url)
+    if (this.siteUrl === url) return
+    this.siteUrl = url
+    const loading = view.webContents.loadURL(url)
     this.siteLoad = loading
     try {
       await loading
