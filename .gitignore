@@ -1,4 +1,8 @@
 node_modules/
 dist/
+out/
+.idea/
+clean/
 .DS_Store
 Thumbs.db
+*.log
