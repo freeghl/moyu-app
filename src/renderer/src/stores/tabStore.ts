@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, shallowRef, markRaw } from 'vue'
+import { ref, computed, shallowRef, defineAsyncComponent, type Component } from 'vue'
 import type { TabItem } from '@shared/types'
 import { toolRegistry } from '../registry'
 
@@ -9,8 +9,8 @@ export const useTabStore = defineStore('tabs', () => {
   const tabs = ref<TabItem[]>([])
   const activeTabId = ref<string | null>(null)
 
-  // Store component instances to preserve state
-  const tabComponents = shallowRef<Map<string, any>>(new Map())
+  // Keep the async component identity stable for each open tab.
+  const tabComponents = shallowRef<Map<string, Component>>(new Map())
 
   const activeTab = computed(() =>
     tabs.value.find((t) => t.id === activeTabId.value) ?? null
@@ -37,8 +37,7 @@ export const useTabStore = defineStore('tabs', () => {
       isActive: true
     }
 
-    // Store the component loader
-    tabComponents.value.set(tabId, markRaw(tool.component))
+    tabComponents.value.set(tabId, defineAsyncComponent(tool.component))
 
     tabs.value.push(tab)
     activeTabId.value = tabId

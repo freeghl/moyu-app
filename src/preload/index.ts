@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { ElectronAPI } from '@electron-toolkit/preload'
+import type { MoyuPreviewAPI } from '@shared/moyuPreview'
 
 const api = {
   window: {
@@ -11,6 +12,12 @@ const api = {
       ipcRenderer.on('window:maximized-changed', (_, isMaximized) => callback(isMaximized))
     }
   },
+  moyuPreview: {
+    show: (request) => ipcRenderer.invoke('moyu-preview:show', request),
+    hide: () => ipcRenderer.invoke('moyu-preview:hide'),
+    listSites: () => ipcRenderer.invoke('moyu-preview:list-sites'),
+    changeSite: (change) => ipcRenderer.invoke('moyu-preview:change-site', change)
+  } satisfies MoyuPreviewAPI,
   onToggleSearch: (callback: () => void): void => {
     ipcRenderer.on('global:toggle-search', () => callback())
   }
