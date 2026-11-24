@@ -7,8 +7,10 @@ export interface AppSettings {
   closeToTray: boolean
   /** 启动时恢复上次打开的标签页 */
   restoreSession: boolean
-  /** 老板键（隐藏 / 显示主窗口），空字符串表示不启用 */
+  /** 老板键（切换假代码界面 / 摸鱼界面），空字符串表示不启用 */
   bossKey: string
+  /** 快速隐藏（隐藏 / 显示主窗口），空字符串表示不启用 */
+  hideKey: string
   /** 全局唤出（显示窗口并打开命令面板） */
   summonKey: string
 }
@@ -62,13 +64,14 @@ export function createDefaultPreferences(): AppPreferences {
     settings: {
       closeToTray: false,
       restoreSession: true,
-      bossKey: 'CommandOrControl+Shift+H',
+      bossKey: 'Alt+Q',
+      hideKey: 'Alt+H',
       summonKey: 'CommandOrControl+Shift+K'
     },
     window: { width: 1400, height: 900, maximized: false },
     session: {
-      tabs: [],
-      activeToolId: null,
+      tabs: ['moyu-resources'],
+      activeToolId: 'moyu-resources',
       workspace: 'home',
       category: null,
       sidebarCollapsed: false,
@@ -154,11 +157,13 @@ export function normalizePreferences(raw: unknown): AppPreferences {
   if (!isRecord(raw)) return defaults
 
   const settings = isRecord(raw.settings) ? raw.settings : {}
+  const legacyBossKeyWasHide = !('hideKey' in settings) && settings.bossKey === 'CommandOrControl+Shift+H'
   return {
     settings: {
       closeToTray: readBoolean(settings.closeToTray, defaults.settings.closeToTray),
       restoreSession: readBoolean(settings.restoreSession, defaults.settings.restoreSession),
-      bossKey: readText(settings.bossKey, defaults.settings.bossKey),
+      bossKey: legacyBossKeyWasHide ? defaults.settings.bossKey : readText(settings.bossKey, defaults.settings.bossKey),
+      hideKey: readText(settings.hideKey, defaults.settings.hideKey),
       summonKey: readText(settings.summonKey, defaults.settings.summonKey)
     },
     window: readWindow(raw.window, defaults.window),

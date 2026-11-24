@@ -33,13 +33,15 @@ function windowOptions(state: WindowState): Electron.BrowserWindowConstructorOpt
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
+    title: 'Visual Studio Code',
     backgroundColor: '#090a0d',
     icon: resourcePath('icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webviewTag: true
     }
   }
 }
@@ -83,6 +85,16 @@ function hideWindow(): void {
 function toggleBoss(): void {
   const window = windowService.getMainWindow()
   if (!window || window.isDestroyed()) return
+  hideSitePreview(window)
+  if (!window.isVisible()) window.show()
+  window.focus()
+  window.webContents.send('moyu:toggle-boss')
+  syncTray()
+}
+
+function toggleHide(): void {
+  const window = windowService.getMainWindow()
+  if (!window || window.isDestroyed()) return
   if (window.isVisible() && window.isFocused()) {
     hideWindow()
   } else {
@@ -112,6 +124,7 @@ function syncTray(): void {
     {
       windowVisible: Boolean(window && !window.isDestroyed() && window.isVisible()),
       bossKey: preferences.settings.bossKey,
+      hideKey: preferences.settings.hideKey,
       summonKey: preferences.settings.summonKey
     },
     trayHandlers
@@ -164,7 +177,7 @@ if (!locked) {
   app.on('second-instance', () => showWindow())
 
   app.whenReady().then(async () => {
-    electronApp.setAppUserModelId('com.devbox.app')
+    electronApp.setAppUserModelId('com.moyu.app')
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
@@ -173,9 +186,9 @@ if (!locked) {
     preferences = await preferenceStore.get()
 
     registerAllIpc()
-    shortcutService.setHandlers({ toggleBoss, summon })
+    shortcutService.setHandlers({ toggleBoss, toggleHide, summon })
     const shortcutResult = shortcutService.apply(preferences.settings)
-    if (!shortcutResult.ok) console.warn('[devbox] 全局快捷键注册失败：', shortcutResult.error)
+    if (!shortcutResult.ok) console.warn('[moyu] 全局快捷键注册失败：', shortcutResult.error)
     preferenceStore.subscribe((next) => {
       preferences = next
       syncTray()
@@ -184,6 +197,7 @@ if (!locked) {
     createTray(trayHandlers, {
       windowVisible: false,
       bossKey: preferences.settings.bossKey,
+      hideKey: preferences.settings.hideKey,
       summonKey: preferences.settings.summonKey
     })
 

@@ -32,10 +32,11 @@ export function registerPreferencesIpc(): void {
     lifecycle.quit()
   })
 
-  ipcMain.handle('shortcuts:apply', async (event, bossKey: unknown, summonKey: unknown) => {
+  ipcMain.handle('shortcuts:apply', async (event, bossKey: unknown, hideKey: unknown, summonKey: unknown) => {
     if (!isTrustedSender(event)) return { ok: false, error: '来源不可信' }
     const keys = {
       bossKey: typeof bossKey === 'string' ? bossKey : '',
+      hideKey: typeof hideKey === 'string' ? hideKey : '',
       summonKey: typeof summonKey === 'string' ? summonKey : ''
     }
     const result = shortcutService.apply(keys)

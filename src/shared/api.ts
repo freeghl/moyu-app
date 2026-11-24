@@ -28,7 +28,7 @@ export interface AppShellAPI {
 }
 
 export interface ShortcutsAPI {
-  apply: (bossKey: string, summonKey: string) => Promise<ShortcutApplyResult>
+  apply: (bossKey: string, hideKey: string, summonKey: string) => Promise<ShortcutApplyResult>
 }
 
 export interface AppAPI {
@@ -37,5 +37,6 @@ export interface AppAPI {
   prefs: PreferencesAPI
   app: AppShellAPI
   shortcuts: ShortcutsAPI
+  onToggleBoss: (callback: () => void) => () => void
   onToggleSearch: (callback: () => void) => () => void
 }

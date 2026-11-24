@@ -11,6 +11,7 @@ export interface TrayHandlers {
 
 export interface TrayState {
   bossKey: string
+  hideKey: string
   summonKey: string
   windowVisible: boolean
 }
@@ -29,17 +30,18 @@ function buildMenu(state: TrayState, handlers: TrayHandlers): Menu {
       click: () => (state.windowVisible ? handlers.hide() : handlers.show())
     },
     { type: 'separator' },
-    { label: `快速隐藏：${acceleratorLabel(state.bossKey)}`, enabled: false },
+    { label: `老板键：${acceleratorLabel(state.bossKey)}`, enabled: false },
+    { label: `快速隐藏：${acceleratorLabel(state.hideKey)}`, enabled: false },
     { label: `全局唤起：${acceleratorLabel(state.summonKey)}`, enabled: false },
     { type: 'separator' },
-    { label: '退出 DevBox', click: handlers.quit }
+    { label: '退出', click: handlers.quit }
   ])
 }
 
 export function createTray(handlers: TrayHandlers, state: TrayState): Tray {
   const image = nativeImage.createFromPath(resourcePath('tray.png'))
   tray = new Tray(image.isEmpty() ? nativeImage.createEmpty() : image)
-  tray.setToolTip('DevBox')
+  tray.setToolTip('Visual Studio Code')
   tray.setContextMenu(buildMenu(state, handlers))
   tray.on('click', () => handlers.show())
   return tray

@@ -1,18 +1,29 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import AppLayout from './layouts/AppLayout.vue'
-import { usePrefsStore, useTabStore } from './stores'
+import { useMoyuStore, useNavStore, usePrefsStore, useTabStore } from './stores'
 
 const prefsStore = usePrefsStore()
 const tabStore = useTabStore()
+const navStore = useNavStore()
+const moyuStore = useMoyuStore()
 const ready = ref(false)
+
+function openMoyuBrowser(): void {
+  navStore.exitSettings()
+  tabStore.openTool('moyu-resources')
+}
 
 onMounted(async () => {
   await prefsStore.init()
   tabStore.restore()
+  if (!tabStore.tabs.length) openMoyuBrowser()
   ready.value = true
 
-  // 全局唤出（主进程快捷键 / 托盘）→ 打开命令面板
+  window.api?.onToggleBoss(() => {
+    openMoyuBrowser()
+    moyuStore.toggleBossMode()
+  })
   window.api?.onToggleSearch(() => {
     window.dispatchEvent(new CustomEvent('toggle-search'))
   })

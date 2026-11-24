@@ -2,6 +2,8 @@
 import { useTabStore } from '../stores'
 import { computed } from 'vue'
 
+defineProps<{ disguise: boolean }>()
+
 const tabStore = useTabStore()
 
 const currentToolName = computed(() => {
@@ -11,44 +13,74 @@ const currentToolName = computed(() => {
 
 <template>
   <footer
-    class="flex items-center justify-between shrink-0 px-3.5 border-t select-none text-[11px]"
-    style="
-      height: var(--statusbar-height);
-      background: var(--color-bg-elevated);
-      border-color: var(--color-border-muted);
-      color: var(--color-text-tertiary);
-    "
+    class="flex items-center justify-between shrink-0 border-t select-none text-[11px]"
+    :style="{
+      height: 'var(--statusbar-height)',
+      background: disguise ? '#007acc' : 'var(--color-bg-elevated)',
+      borderColor: disguise ? 'transparent' : 'var(--color-border-muted)',
+      color: disguise ? '#ffffff' : 'var(--color-text-tertiary)'
+    }"
   >
-    <!-- Left: Application Running Status -->
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2">
-        <span class="relative flex h-2 w-2">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background: var(--color-success)"></span>
-          <span class="relative inline-flex rounded-full h-2 w-2" style="background: var(--color-success)"></span>
+    <template v-if="disguise">
+      <div class="flex items-center gap-3">
+        <span class="flex items-center gap-1.5">
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <circle cx="6" cy="6" r="2" /><circle cx="6" cy="18" r="2" /><circle cx="18" cy="8" r="2" /><path d="M6 8v8m0-2c0-4 12-2 12-7" />
+          </svg>
+          main*
         </span>
-        <span class="font-medium" style="color: var(--color-text-secondary)">就绪</span>
+        <span class="flex items-center gap-1.5">
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 0 1 13.5-5.8L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.5 5.8L4 15.5M4 20v-4.5h4.5" />
+          </svg>
+        </span>
+        <span>⊗ 0</span>
+        <span>△ 0</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span>Ln 1, Col 1</span>
+        <span>Spaces: 2</span>
+        <span>UTF-8</span>
+        <span>LF</span>
+        <span>{ } TypeScript</span>
+        <span>✓ Prettier</span>
+        <span title="通知">
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 8H3c0-1 3-1 3-8Zm4 11h4" />
+          </svg>
+        </span>
+      </div>
+    </template>
+
+    <template v-else>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background: var(--color-success)"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2" style="background: var(--color-success)"></span>
+          </span>
+          <span class="font-medium" style="color: var(--color-text-secondary)">就绪</span>
+        </div>
+
+        <span v-if="currentToolName" class="text-zinc-600">/</span>
+
+        <span v-if="currentToolName" class="font-medium truncate max-w-[200px]" style="color: var(--color-accent-hover)">
+          {{ currentToolName }}
+        </span>
       </div>
 
-      <span v-if="currentToolName" class="text-zinc-600">/</span>
+      <div class="hidden md:flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+        <span>按下</span>
+        <span class="kbd-badge">Ctrl</span>
+        <span class="kbd-badge">K</span>
+        <span>呼出全局命令面板</span>
+      </div>
 
-      <span v-if="currentToolName" class="font-medium truncate max-w-[200px]" style="color: var(--color-accent-hover)">
-        {{ currentToolName }}
-      </span>
-    </div>
-
-    <!-- Center: Raycast Keyboard Tips -->
-    <div class="hidden md:flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-      <span>按下</span>
-      <span class="kbd-badge">Ctrl</span>
-      <span class="kbd-badge">K</span>
-      <span>呼出全局命令面板</span>
-    </div>
-
-    <!-- Right: Version info & badges -->
-    <div class="flex items-center gap-3 font-mono">
-      <span>已打开标签: {{ tabStore.tabs.length }}</span>
-      <span class="text-zinc-700">|</span>
-      <span>v1.0.0</span>
-    </div>
+      <div class="flex items-center gap-3 font-mono">
+        <span>已打开标签: {{ tabStore.tabs.length }}</span>
+        <span class="text-zinc-700">|</span>
+        <span>v1.0.0</span>
+      </div>
+    </template>
   </footer>
 </template>

@@ -4,13 +4,13 @@ export interface Site {
   url: string
 }
 
-/** 默认收录的参考文档站点，可自行增删 */
+/** 默认收录的摸鱼站点，可自行增删 */
 export const defaultSites: readonly Site[] = [
-  { id: 'mdn', name: 'MDN Web Docs', url: 'https://developer.mozilla.org/zh-CN/' },
-  { id: 'typescript', name: 'TypeScript 文档', url: 'https://www.typescriptlang.org/docs/' },
-  { id: 'caniuse', name: 'Can I use', url: 'https://caniuse.com/' },
-  { id: 'devdocs', name: 'DevDocs', url: 'https://devdocs.io/' },
-  { id: 'regex101', name: 'regex101', url: 'https://regex101.com/' }
+  { id: 'quick-draw', name: 'Quick, Draw!', url: 'https://quickdraw.withgoogle.com/' },
+  { id: 'gcores', name: '机核 GCORES', url: 'https://www.gcores.com/' },
+  { id: 'radio-garden', name: 'Radio Garden', url: 'https://radio.garden/' },
+  { id: 'arts-and-culture', name: 'Google Arts & Culture', url: 'https://artsandculture.google.com/' },
+  { id: 'nasa', name: 'NASA 每日一图', url: 'https://www.nasa.gov/image-of-the-day/' }
 ]
 
 export type SiteChange =

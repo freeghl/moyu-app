@@ -3,6 +3,7 @@ import type { AppSettings } from '@shared/preferences'
 
 export interface ShortcutHandlers {
   toggleBoss: () => void
+  toggleHide: () => void
   summon: () => void
 }
 
@@ -11,36 +12,44 @@ export interface ShortcutApplyResult {
   error?: string
 }
 
-type Keys = Pick<AppSettings, 'bossKey' | 'summonKey'>
+type ShortcutKeys = Pick<AppSettings, 'bossKey' | 'hideKey' | 'summonKey'>
 
 class ShortcutService {
-  private registered: { bossKey?: string; summonKey?: string } = {}
+  private registered: Partial<ShortcutKeys> = {}
   private handlers?: ShortcutHandlers
 
   setHandlers(handlers: ShortcutHandlers): void {
     this.handlers = handlers
   }
 
-  /** 重新注册全部全局快捷键；失败时回滚到上一组，避免用户点一次就全丢 */
-  apply(keys: Keys): ShortcutApplyResult {
-    const wanted = {
+  apply(keys: ShortcutKeys): ShortcutApplyResult {
+    const wanted: ShortcutKeys = {
       bossKey: keys.bossKey.trim(),
+      hideKey: keys.hideKey.trim(),
       summonKey: keys.summonKey.trim()
     }
-    if (wanted.bossKey && wanted.summonKey && wanted.bossKey === wanted.summonKey) {
-      return { ok: false, error: '两个快捷键不能使用同一个组合' }
+    const values = Object.values(wanted).filter(Boolean)
+    if (new Set(values).size !== values.length) {
+      return { ok: false, error: '三个快捷键不能使用同一个组合' }
     }
 
     const previous = { ...this.registered }
     this.unregisterAll()
 
-    const failure = this.tryRegister(wanted.bossKey, () => this.handlers?.toggleBoss(), '老板键') ??
-      this.tryRegister(wanted.summonKey, () => this.handlers?.summon(), '全局唤出')
+    const definitions: { key: keyof ShortcutKeys; label: string; run: () => void }[] = [
+      { key: 'bossKey', label: '老板键', run: () => this.handlers?.toggleBoss() },
+      { key: 'hideKey', label: '快速隐藏', run: () => this.handlers?.toggleHide() },
+      { key: 'summonKey', label: '全局唤出', run: () => this.handlers?.summon() }
+    ]
+    const failure = definitions
+      .map((definition) => this.tryRegister(wanted[definition.key], definition.run, definition.label))
+      .find((result): result is string => Boolean(result))
 
     if (failure) {
       this.unregisterAll()
-      this.tryRegister(previous.bossKey, () => this.handlers?.toggleBoss(), '老板键')
-      this.tryRegister(previous.summonKey, () => this.handlers?.summon(), '全局唤出')
+      for (const definition of definitions) {
+        this.tryRegister(previous[definition.key], definition.run, definition.label)
+      }
       this.registered = previous
       return { ok: false, error: failure }
     }

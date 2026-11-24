@@ -39,8 +39,9 @@ const api: AppAPI = {
     quit: () => ipcRenderer.invoke('app:quit')
   },
   shortcuts: {
-    apply: (bossKey, summonKey) => ipcRenderer.invoke('shortcuts:apply', bossKey, summonKey)
+    apply: (bossKey, hideKey, summonKey) => ipcRenderer.invoke('shortcuts:apply', bossKey, hideKey, summonKey)
   },
+  onToggleBoss: (callback) => subscribe('moyu:toggle-boss', callback),
   onToggleSearch: (callback) => subscribe('global:toggle-search', callback)
 }
 

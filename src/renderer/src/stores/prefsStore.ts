@@ -13,7 +13,7 @@ const FLUSH_DELAY = 250
 
 /** 工具改名后把旧 id 的数据接过来，避免用户重启后丢掉标签和工具内状态 */
 const LEGACY_TOOL_IDS: Record<string, string> = {
-  'moyu-resources': 'reference-peek'
+  'reference-peek': 'moyu-resources'
 }
 
 function migrateToolIds(preferences: AppPreferences): boolean {

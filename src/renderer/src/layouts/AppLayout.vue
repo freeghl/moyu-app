@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import TitleBar from '../components/TitleBar.vue'
 import Sidebar from '../components/Sidebar.vue'
+import CodeSidebar from '../components/CodeSidebar.vue'
 import TabBar from '../components/TabBar.vue'
 import WorkArea from '../components/WorkArea.vue'
 import StatusBar from '../components/StatusBar.vue'
 import SearchPalette from '../components/SearchPalette.vue'
-import { useTabStore } from '../stores'
+import { useMoyuStore, useNavStore, useTabStore } from '../stores'
 
 const tabStore = useTabStore()
+const navStore = useNavStore()
+const moyuStore = useMoyuStore()
+const disguised = computed(() =>
+  moyuStore.bossMode &&
+  tabStore.activeTab?.toolId === 'moyu-resources' &&
+  !navStore.isSettings
+)
 
 function isPaletteOpen(): boolean {
   return Boolean(document.querySelector('[data-search-palette]'))
@@ -54,12 +62,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
     <!-- Main Body -->
     <div class="flex flex-1 min-h-0">
       <!-- Sidebar -->
-      <Sidebar />
+      <CodeSidebar v-if="disguised" @settings="navStore.setWorkspace('settings')" />
+      <Sidebar v-else />
 
       <!-- Content Area -->
       <div class="flex flex-col flex-1 min-w-0">
         <!-- Tab Bar -->
-        <TabBar />
+        <TabBar v-if="!disguised" />
 
         <!-- Work Area -->
         <WorkArea />
@@ -67,7 +76,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
     </div>
 
     <!-- Status Bar -->
-    <StatusBar />
+    <StatusBar :disguise="disguised" />
 
     <!-- Search Palette (overlay) -->
     <SearchPalette />

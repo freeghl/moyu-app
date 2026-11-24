@@ -7,7 +7,7 @@ const prefs = usePrefsStore()
 
 const version = ref('')
 const dataDir = ref('')
-const recordField = ref<'bossKey' | 'summonKey' | null>(null)
+const recordField = ref<'bossKey' | 'hideKey' | 'summonKey' | null>(null)
 const shortcutError = ref('')
 const shortcutSaving = ref(false)
 
@@ -63,7 +63,7 @@ async function handleRecordKey(event: KeyboardEvent): Promise<void> {
   await apply({ [field]: accelerator })
 }
 
-async function apply(patch: Partial<Pick<AppSettings, 'bossKey' | 'summonKey'>>): Promise<void> {
+async function apply(patch: Partial<Pick<AppSettings, 'bossKey' | 'hideKey' | 'summonKey'>>): Promise<void> {
   const api = window.api?.shortcuts
   if (!api) return
 
@@ -71,7 +71,7 @@ async function apply(patch: Partial<Pick<AppSettings, 'bossKey' | 'summonKey'>>)
   shortcutSaving.value = true
   shortcutError.value = ''
   try {
-    const result = await api.apply(next.bossKey, next.summonKey)
+    const result = await api.apply(next.bossKey, next.hideKey, next.summonKey)
     if (!result.ok) {
       shortcutError.value = result.error ?? '快捷键注册失败'
       return
@@ -84,7 +84,7 @@ async function apply(patch: Partial<Pick<AppSettings, 'bossKey' | 'summonKey'>>)
   }
 }
 
-async function clearShortcut(field: 'bossKey' | 'summonKey'): Promise<void> {
+async function clearShortcut(field: 'bossKey' | 'hideKey' | 'summonKey'): Promise<void> {
   await apply({ [field]: '' })
 }
 
@@ -117,7 +117,7 @@ function hideToTray(): void {
             <div class="min-w-0">
               <p class="text-xs font-medium" style="color: var(--color-text-primary)">关闭窗口时最小化到托盘</p>
               <p class="mt-1 text-[11px]" style="color: var(--color-text-tertiary)">
-                开启后点关闭只是收进托盘，可从托盘或老板键随时唤回
+                开启后点关闭只是收进托盘，可从托盘或快速隐藏随时唤回
               </p>
             </div>
             <button
@@ -167,7 +167,8 @@ function hideToTray(): void {
         <div class="space-y-3 px-4 py-4">
           <div
             v-for="item in [
-              { field: 'bossKey' as const, title: '快速隐藏', desc: '全局生效，按下立即隐藏窗口，再按一次恢复' },
+              { field: 'bossKey' as const, title: '老板键', desc: '全局生效，切换假代码界面 / 摸鱼界面' },
+              { field: 'hideKey' as const, title: '快速隐藏', desc: '全局生效，按下立即隐藏窗口，再按一次恢复' },
               { field: 'summonKey' as const, title: '全局唤起', desc: '在任何程序里唤起窗口并打开命令面板' }
             ]"
             :key="item.field"
