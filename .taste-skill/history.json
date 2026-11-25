@@ -1,0 +1,20 @@
+{
+ "palettes": [
+  "blue-black-cornflower"
+ ],
+ "types": [
+  "urbanist"
+ ],
+ "dealt": [
+  "urbanist",
+  "instrument",
+  "epilogue"
+ ],
+ "moments": [
+  {
+   "id": "liquid-type",
+   "at": "2026-11-25T01:39:15.170Z",
+   "seed": "36fa14be"
+  }
+ ]
+}

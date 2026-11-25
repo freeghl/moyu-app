@@ -72,7 +72,7 @@ onBeforeUnmount(() => window.removeEventListener('pointerdown', closeMenu))
     class="flex items-end shrink-0 overflow-x-auto border-b select-none"
     style="
       height: var(--tabbar-height);
-      background: var(--color-bg-elevated);
+      background: var(--shell-bg, var(--color-bg-elevated));
       border-color: var(--color-border-muted);
     "
     v-show="tabStore.tabs.length > 0"
@@ -85,7 +85,7 @@ onBeforeUnmount(() => window.removeEventListener('pointerdown', closeMenu))
         :class="[tab.isActive ? 'shadow-sm' : 'hover:bg-white/[0.03]', draggingId === tab.id ? 'opacity-40' : '']"
         :style="{
           maxWidth: '220px',
-          background: tab.isActive ? 'var(--color-bg-base)' : 'transparent',
+          background: tab.isActive ? 'var(--tab-active-bg, var(--color-bg-base))' : 'transparent',
           borderColor: 'var(--color-border-muted)',
           color: tab.isActive ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)'
         }"

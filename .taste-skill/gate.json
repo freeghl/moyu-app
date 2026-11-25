@@ -1,0 +1,1536 @@
+{
+ "start": "2026-11-25T01:35:20.477Z",
+ "round": 1,
+ "idle": 0,
+ "errors": 0,
+ "status": "fail",
+ "history": [
+  {
+   "at": "2026-11-25T02:28:12.795Z",
+   "mode": "manual",
+   "status": "fail",
+   "fails": 42,
+   "round": 1,
+   "reused": false,
+   "stopHookActive": false
+  }
+ ],
+ "max": 3,
+ "marker": {
+  "page": null,
+  "url": "http://127.0.0.1:9999/",
+  "root": null,
+  "kind": "software",
+  "category": "本机系统监控工具",
+  "primary": "刷新系统数据",
+  "rounds": 3,
+  "start": "2026-11-25T01:35:20.477Z",
+  "by": "gate.mjs --start"
+ },
+ "manual": true,
+ "roundKey": "2ab5adc2ef5960db:da39a3ee",
+ "roundFree": false,
+ "idleFree": false,
+ "blockKey": null,
+ "fp": "2ab5adc2ef5960db",
+ "page": "http://127.0.0.1:9999/",
+ "found": {
+  "fails": [
+   {
+    "check": "no-visual",
+    "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用\""
+    ]
+   },
+   {
+    "check": "card-visual",
+    "where": "div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(3) \"⚡ dev 示例工具模板 这是一个基础工具骨架模板，演示如何编写独立工具组件 #\"",
+    "msg": "3 cards hold only text: no picture, icon, UI fragment or effect in any of them",
+    "fix": "give the cards a visual: an inset panel with a UI fragment, a photograph or real icons",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "card-visual"
+    ],
+    "wheres": [
+     "div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(3) \"⚡ dev 示例工具模板 这是一个基础工具骨架模板，演示如何编写独立工具组件 #\""
+    ]
+   },
+   {
+    "check": "copy-actions",
+    "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(2) > button.flex.items-center:nth-of-type(2) \"网络工具 (0)\"",
+    "msg": "8 actions in the hero (\"搜索工具...\", \"开发工具 (1)\", \"网络工具 (0)\", \"图片工具 (0)\", \"文件工具 (0)\", \"加密工具 (0)\", \"AI 工具 (0)\", \"系统工具 (2)\"); at most 2",
+    "fix": "few actions, one wording: at most 2 in the hero, the main action word for word in nav, hero and close",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "copy-actions"
+    ],
+    "wheres": [
+     "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(2) > button.flex.items-center:nth-of-type(2) \"网络工具 (0)\""
+    ]
+   },
+   {
+    "check": "heading-scale",
+    "where": "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div:nth-of-type(1) > h3.text-xs.font-semibold \"示例工具模板\"",
+    "msg": "an h3 at 12px, as large as the smallest h2 (12px) or larger (and 2 more like it: \"系统设置\", \"系统监控\")",
+    "fix": "size headings by level: the h1 largest, one size per level, each level below the one above",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "heading-scale"
+    ],
+    "wheres": [
+     "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div:nth-of-type(1) > h3.text-xs.font-semibold \"示例工具模板\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "header.flex.items-center > div.command-search.flex > button.flex.items-center > span.transition-colors \"搜索工具或命令...\"",
+    "msg": "a caption, label or muted line in #71717a on #16171d reads 3.7:1 (needs 4.5:1)",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "header.flex.items-center > div.command-search.flex > button.flex.items-center > span.transition-colors \"搜索工具或命令...\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.command-search.flex > button.flex.items-center > div.flex.items-center > span.kbd-badge:nth-of-type(1) \"Ctrl\"",
+    "msg": "a caption, label or muted line in #71717a on #1c1d25 reads 3.47:1 (needs 4.5:1); 4 like it, like \"K\", \"Ctrl\", \"K\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.command-search.flex > button.flex.items-center > div.flex.items-center > span.kbd-badge:nth-of-type(1) \"Ctrl\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.flex.flex-1 > aside.app-sidebar.flex > div.flex.items-center:nth-of-type(1) > span.font-bold.uppercase \"导航工作区\"",
+    "msg": "a caption, label or muted line in #71717a on #111217 reads 3.87:1 (needs 4.5:1); 6 like it, like \"这是一个基础工具骨架模板，演示如何编写独立工\", \"调整应用背景图片、透明度与虚化效果\", \"查看本机硬件配置、资源占用与进程性能\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.flex.flex-1 > aside.app-sidebar.flex > div.flex.items-center:nth-of-type(1) > span.font-bold.uppercase \"导航工作区\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "aside.app-sidebar.flex > div.flex-1.overflow-y-auto > div:nth-of-type(1) > div.font-semibold.uppercase \"工作空间\"",
+    "msg": "a caption, label or muted line in #71717b on #111217 reads 3.87:1 (needs 4.5:1); 12 like it, like \"工具分类\", \"(1)\", \"(0)\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "aside.app-sidebar.flex > div.flex-1.overflow-y-auto > div:nth-of-type(1) > div.font-semibold.uppercase \"工作空间\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div:nth-of-type(1) > div:nth-of-type(2) > button.flex.items-center:nth-of-type(2) > span.font-mono.rounded-full \"3\"",
+    "msg": "a caption, label or muted line in #71717a on #242631 reads 3.11:1 (needs 4.5:1); 10 like it, like \"0\", \"0\", \"1\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div:nth-of-type(1) > div:nth-of-type(2) > button.flex.items-center:nth-of-type(2) > span.font-mono.rounded-full \"3\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div:nth-of-type(1) > div.ml-5.pl-2 > button.flex.items-center > span.text-xs.opacity-70 \"⚡\"",
+    "msg": "a caption, label or muted line in #76767e on #111217 reads 4.15:1 (needs 4.5:1); 3 like it, like \"设\", \"SYS\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div:nth-of-type(1) > div.ml-5.pl-2 > button.flex.items-center > span.text-xs.opacity-70 \"⚡\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > div > p.text-xs.leading-relaxed \"固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快速定位或打开工具\"",
+    "msg": "a caption, label or muted line in #71717a on #090a0d reads 4.1:1 (needs 4.5:1)",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > div > p.text-xs.leading-relaxed \"固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快速定位或打开工具\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(2) > div.flex.items-center > span.font-mono.text-zinc-500 \"(3)\"",
+    "msg": "a caption, label or muted line in #71717b on #090a0d reads 4.1:1 (needs 4.5:1)",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(2) > div.flex.items-center > span.font-mono.text-zinc-500 \"(3)\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.relative.z-10 > footer.app-statusbar.flex > div.hidden.items-center > span:nth-of-type(1) \"按下\"",
+    "msg": "a caption, label or muted line in #4b4b52 on #111217 reads 2.16:1 (needs 4.5:1); 2 like it, like \"呼出全局命令面板\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.relative.z-10 > footer.app-statusbar.flex > div.hidden.items-center > span:nth-of-type(1) \"按下\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.relative.z-10 > footer.app-statusbar.flex > div.hidden.items-center > span.kbd-badge:nth-of-type(2) \"Ctrl\"",
+    "msg": "a caption, label or muted line in #4f4f58 on #1c1d25 reads 2.08:1 (needs 4.5:1); 2 like it, like \"K\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.relative.z-10 > footer.app-statusbar.flex > div.hidden.items-center > span.kbd-badge:nth-of-type(2) \"Ctrl\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.relative.z-10 > footer.app-statusbar.flex > div.flex.items-center:nth-of-type(3) > span.text-zinc-700 \"|\"",
+    "msg": "a caption, label or muted line in #3f3f47 on #111217 reads 1.79:1 (needs 4.5:1)",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.relative.z-10 > footer.app-statusbar.flex > div.flex.items-center:nth-of-type(3) > span.text-zinc-700 \"|\""
+    ]
+   },
+   {
+    "check": "focus-visible",
+    "where": "div.relative.z-10 > header.flex.items-center > div.command-search.flex:nth-of-type(2) > button.flex.items-center \"搜索工具或命令... Ctrl K\"",
+    "msg": "Tab stop 1, button \"搜索工具或命令... Ctrl K\": its focus change is faint: 1.38:1 against the ground, 3:1 needed",
+    "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "focus-visible"
+    ],
+    "wheres": [
+     "div.relative.z-10 > header.flex.items-center > div.command-search.flex:nth-of-type(2) > button.flex.items-center \"搜索工具或命令... Ctrl K\""
+    ]
+   },
+   {
+    "check": "focus-visible",
+    "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(1) \"最小化\"",
+    "msg": "Tab stop 2, button \"最小化\": its focus change is faint: 2.9:1 against the ground, 3:1 needed",
+    "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "focus-visible"
+    ],
+    "wheres": [
+     "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(1) \"最小化\""
+    ]
+   },
+   {
+    "check": "focus-visible",
+    "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(2) \"最大化\"",
+    "msg": "Tab stop 3, button \"最大化\": its focus change is faint: 1.7:1 against the ground, 3:1 needed",
+    "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "focus-visible"
+    ],
+    "wheres": [
+     "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(2) \"最大化\""
+    ]
+   },
+   {
+    "check": "focus-visible",
+    "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(3) \"关闭\"",
+    "msg": "Tab stop 4, button \"关闭\": its focus change is faint: 1.27:1 against the ground, 3:1 needed",
+    "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "focus-visible"
+    ],
+    "wheres": [
+     "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(3) \"关闭\""
+    ]
+   },
+   {
+    "check": "action-repeat",
+    "where": "div:nth-of-type(1) > div.flex.items-center > div.flex.items-center:nth-of-type(2) > button.w-6.h-6 \"添加收藏\"",
+    "msg": "\"添加收藏\" shows 3 times on the first screen at 1440px (hero, hero, hero): three copies of one action on a screen read as clutter",
+    "fix": "show the action once a screen besides the nav's button: the hero's, the close's or the phone bar's, never all at once",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "action-repeat"
+    ],
+    "wheres": [
+     "div:nth-of-type(1) > div.flex.items-center > div.flex.items-center:nth-of-type(2) > button.w-6.h-6 \"添加收藏\""
+    ]
+   },
+   {
+    "check": "moment-none",
+    "where": "(the page)",
+    "msg": "a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)",
+    "fix": "deal one (moments.mjs pick --page software) and mount it in its own section",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "moment-none"
+    ],
+    "wheres": [
+     "(the page)"
+    ]
+   },
+   {
+    "check": "hidden-content",
+    "where": "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div.mt-4.border-t > span.opacity-0.transition-opacity \"打开工具 →\"",
+    "msg": "with reduced motion asked for 3 lines stay hidden on the first screen, 0.7 s after it was scrolled to (opacity 0): \"打开工具 →\", \"打开工具 →\": the page shows it only when a script reveals it",
+    "fix": "show the content at rest: the hidden state only under a class the script adds on its live path, never in the plain CSS (prefers-reduced-motion and a script that never runs show the finished page)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "hidden-content"
+    ],
+    "wheres": [
+     "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div.mt-4.border-t > span.opacity-0.transition-opacity \"打开工具 →\""
+    ]
+   },
+   {
+    "check": "hero-screen",
+    "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\"",
+    "msg": "the hero ends at 872px on a 900px screen, 28px above the fold: it ends at the fold, 1px either way (SR-1)",
+    "fix": "make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "hero-screen"
+    ],
+    "wheres": [
+     "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\""
+    ]
+   },
+   {
+    "check": "hero-screen",
+    "where": "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\"",
+    "msg": "28px of the next section shows on the first screen (from 872px on a 900px screen): nothing below the hero shows at load (SR-1)",
+    "fix": "end the hero at the fold so nothing of the next section shows at load (hero height: 100svh)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "hero-screen"
+    ],
+    "wheres": [
+     "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\"",
+    "msg": "the section is 28px tall (0 screens), 872px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)",
+    "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\"",
+    "msg": "the section starts at 42px, 42px below the screen grid (0 x 900px): sections start on whole screens (SR-2)",
+    "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\"",
+    "msg": "the screen at scroll 0px (stride 0) shows 28px of section 2 beside section 1: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+    "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\"",
+    "msg": "a <div> sits directly in <main>: every part of <main> is a <section> (SR-4)",
+    "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\""
+    ]
+   },
+   {
+    "check": "one-heading",
+    "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(2) > div.flex.items-center > h2.text-xs.font-semibold \"推荐工具\"",
+    "msg": "the hero holds an h2 (1): its heading is the h1, and an h2 opens the next section (SR-5)",
+    "fix": "give each section one h2, first in its .wrap, and the hero only its h1",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-heading"
+    ],
+    "wheres": [
+     "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(2) > div.flex.items-center > h2.text-xs.font-semibold \"推荐工具\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\"",
+    "msg": "the content of section 1 runs 392px from the left and 14px from the right (read from its outermost blocks: no .wrap): 392 and 14px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+    "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\"",
+    "msg": "the content of section 2 runs 392px from the left and 14px from the right (read from its outermost blocks: no .wrap): 392 and 14px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+    "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#app > div.relative.flex > div.relative.z-10 > header.flex.items-center \"Moyu Toolbox 搜索工具或命令...CtrlK\"",
+    "msg": "the nav's content runs 48px from the left and 0px from the right (read from its outermost blocks: no .wrap): the page's container starts at 392px; 48 and 0px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+    "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#app > div.relative.flex > div.relative.z-10 > header.flex.items-center \"Moyu Toolbox 搜索工具或命令...CtrlK\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#app \"Moyu Toolbox 搜索工具或命令...CtrlK 导航工作区 工作空间 \"",
+    "msg": "a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+    "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#app \"Moyu Toolbox 搜索工具或命令...CtrlK 导航工作区 工作空间 \""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.relative.flex > span.animate-ping.absolute",
+    "msg": "a box runs 12-24px, outside the container lines of section 2 at 392-1426px: full width is for background layers and grounds only (SR-6)",
+    "fix": "keep it inside the container lines (.wrap): full width is for background layers and grounds only",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.relative.flex > span.animate-ping.absolute"
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(1) > div.w-6.h-6",
+    "msg": "a box runs 14-38px, outside the container lines of the nav at 392-1426px: full width is for background layers and grounds only (and 4 more like it: div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.relative.flex > span.relative.inline-flex, \"就绪\", \"Moyu Toolbox\") (SR-6)",
+    "fix": "keep it inside the container lines (.wrap): full width is for background layers and grounds only",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(1) > div.w-6.h-6"
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "footer.app-statusbar.flex > div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.font-medium \"就绪\"",
+    "msg": "1 text block starts on a left line at x 30, -362px from the container's left: text starts on the container's left, or on one split line (x 833, 921, 1009) (SR-6)",
+    "fix": "start the text on the container's left, or on the one split line every split shares",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "footer.app-statusbar.flex > div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.font-medium \"就绪\""
+    ]
+   },
+   {
+    "check": "row-lines",
+    "where": "div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(3) \"⚡dev示例工具模板这是一个基础工具骨架模板，演示如何编写独立工具组件#demo\"",
+    "msg": "a row of 3 items: its last item ends at 1288px, the container's right line at 1426px (2px either way) (SR-7)",
+    "fix": "start the row's first item on the container's left line and end its last on the right line, every item one height",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "row-lines"
+    ],
+    "wheres": [
+     "div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(3) \"⚡dev示例工具模板这是一个基础工具骨架模板，演示如何编写独立工具组件#demo\""
+    ]
+   },
+   {
+    "check": "button-styles",
+    "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > button.flex.items-center \"搜索工具...\"",
+    "msg": "one button style (soft, fill #111217, outline #23252f) in 2 heights: 30, 46px (\"搜索工具...\" 46px, \"开发工具 (1)\" 30px)",
+    "fix": "one primary and one secondary button: one shape, one height per size, one label size",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "button-styles"
+    ],
+    "wheres": [
+     "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > button.flex.items-center \"搜索工具...\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.flex.items-center:nth-of-type(1) > div > p.text-xs.leading-relaxed > span.kbd-badge.mx-1 \"Ctrl\"",
+    "msg": "a caption, label or muted line in #71717a on #1c1d25 reads 3.47:1 (needs 4.5:1); 2 like it, like \"K\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.flex.items-center:nth-of-type(1) > div > p.text-xs.leading-relaxed > span.kbd-badge.mx-1 \"Ctrl\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(2) > button.flex.items-center:nth-of-type(1) > span.font-mono.text-zinc-500 \"(1)\"",
+    "msg": "a caption, label or muted line in #71717b on #111217 reads 3.87:1 (needs 4.5:1); 9 like it, like \"(0)\", \"(0)\", \"(0)\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(2) > button.flex.items-center:nth-of-type(1) > span.font-mono.text-zinc-500 \"(1)\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div:nth-of-type(1) > p.leading-relaxed.line-clamp-2 \"这是一个基础工具骨架模板，演示如何编写独立工具组件\"",
+    "msg": "a caption, label or muted line in #71717a on #111217 reads 3.87:1 (needs 4.5:1); 3 like it, like \"调整应用背景图片、透明度与虚化效果\", \"查看本机硬件配置、资源占用与进程性能\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div:nth-of-type(1) > p.leading-relaxed.line-clamp-2 \"这是一个基础工具骨架模板，演示如何编写独立工具组件\""
+    ]
+   },
+   {
+    "check": "container",
+    "where": "page",
+    "msg": "no .wrap",
+    "fix": "put the content in one .wrap",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "layout",
+    "ids": [
+     "container"
+    ],
+    "wheres": [
+     "page"
+    ]
+   }
+  ],
+  "warns": [
+   {
+    "check": "copy-headline",
+    "where": "div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > div > h1.text-2xl.font-bold \"桌面端工具集合应用\"",
+    "msg": "\"桌面端工具集合应用\": no category known to check it against (pass --category, or write the <title> as \"Name: what it is for whom\")",
+    "fix": "put the category noun in the h1 (and who it is for, or where), in 2 to 8 words",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-buttons",
+    "where": "div.relative.z-10 > header.flex.items-center > div.command-search.flex > button.flex.items-center \"搜索工具或命令... Ctrl K\"",
+    "msg": "\"搜索工具或命令... Ctrl K\" does not start with a verb (book, buy, try, start, get, see...) (and 4 more like it: \"开发工具 (1)\", \"网络工具 (0)\", \"AI 工具 (0)\", \"系统工具 (2)\")",
+    "fix": "label buttons with a verb and what the visitor gets (\"Book a room\", \"Start free trial\")",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "stranded-action",
+    "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > button.flex.items-center \"搜索工具...\"",
+    "msg": "stands 393px across from the nearest text of its block (\"桌面端工具集合应用\")",
+    "fix": "put the button under or beside the text it belongs to",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "empty-area",
+    "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用\"",
+    "msg": "48% of the section is empty: 368px under its last (div.card-glow.rounded-xl:nth-of-type(1)), in its 766px of rows (WARN over 35%, FAIL over 50%)",
+    "fix": "fill the section: a picture or a second column beside the words, or more of its own content; the section stays one or two screens tall (T-height)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "skip-link",
+    "where": "div.relative.z-10 > header.flex.items-center > div.command-search.flex:nth-of-type(2) > button.flex.items-center \"搜索工具或命令... Ctrl K\"",
+    "msg": "the first Tab stop is \"搜索工具或命令... Ctrl K\", not a skip link: a keyboard user tabs through the whole nav on every visit",
+    "fix": "add the starter's skip link as the header's first child: <a class=\"skip-link\" href=\"#top\">Skip to content</a>",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "page-meta",
+    "where": "head \"摸鱼工具箱\"",
+    "msg": "no <meta name=\"description\">: a search result and a shared link show a scrap of the page instead",
+    "fix": "write a <title> \"Name: what it is for whom or where\" and a one-sentence description in other words (starter.html)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "share-meta",
+    "where": "head",
+    "msg": "the head lacks og:title, og:description, og:image, twitter:card, an icon, theme-color: a shared link shows no picture or title of its own",
+    "fix": "copy the head block of starter.html: og tags, twitter:card, the icon and theme-color (references/system.md, Head)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "tap-size",
+    "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(1)",
+    "msg": "a 44x41px tap target (and 1 more like it on this screen): under the 44px a phone needs",
+    "fix": "make every link and control outside running text 44px tall on a phone: display: inline-flex; align-items: center; min-height: 44px (a footer list then needs no gap), a 44px small button, or a transparent ::before laid past the box",
+    "widths": [
+     390,
+     320
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "tap-size",
+    "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(3)",
+    "msg": "a 44x41px tap target: under the 44px a phone needs",
+    "fix": "make every link and control outside running text 44px tall on a phone: display: inline-flex; align-items: center; min-height: 44px (a footer list then needs no gap), a 44px small button, or a transparent ::before laid past the box",
+    "widths": [
+     390,
+     320
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "tap-size",
+    "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(2) > button.flex.items-center:nth-of-type(1) \"开发工具 (1)\"",
+    "msg": "a 97x30px tap target (and 6 more like it on this screen): under the 44px a phone needs",
+    "fix": "make every link and control outside running text 44px tall on a phone: display: inline-flex; align-items: center; min-height: 44px (a footer list then needs no gap), a 44px small button, or a transparent ::before laid past the box",
+    "widths": [
+     390,
+     320
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "tap-size",
+    "where": "div:nth-of-type(1) > div.flex.items-center > div.flex.items-center:nth-of-type(2) > button.w-6.h-6",
+    "msg": "a 24x24px tap target (and 2 more like it on this screen): under the 44px a phone needs",
+    "fix": "make every link and control outside running text 44px tall on a phone: display: inline-flex; align-items: center; min-height: 44px (a footer list then needs no gap), a 44px small button, or a transparent ::before laid past the box",
+    "widths": [
+     390,
+     320
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-stat-strip",
+    "msg": "stat strip x1",
+    "fix": "a strip only of figures the brief gives (a price, hours, a count); otherwise put each number in the sentence it proves, or leave it out (references/copy-tells.md)",
+    "widths": [],
+    "from": "copy",
+    "where": "copy x1: \"3 / 0 / 0 / 1 / 0 / 0...\"",
+    "exact": false
+   }
+  ],
+  "crashed": [],
+  "seconds": {
+   "consistency": 75,
+   "layout": 16
+  }
+ },
+ "open": [
+  {
+   "check": "no-visual",
+   "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用\""
+   ]
+  },
+  {
+   "check": "card-visual",
+   "where": "div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(3) \"⚡ dev 示例工具模板 这是一个基础工具骨架模板，演示如何编写独立工具组件 #\"",
+   "msg": "3 cards hold only text: no picture, icon, UI fragment or effect in any of them",
+   "fix": "give the cards a visual: an inset panel with a UI fragment, a photograph or real icons",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "card-visual"
+   ],
+   "wheres": [
+    "div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(3) \"⚡ dev 示例工具模板 这是一个基础工具骨架模板，演示如何编写独立工具组件 #\""
+   ]
+  },
+  {
+   "check": "copy-actions",
+   "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(2) > button.flex.items-center:nth-of-type(2) \"网络工具 (0)\"",
+   "msg": "8 actions in the hero (\"搜索工具...\", \"开发工具 (1)\", \"网络工具 (0)\", \"图片工具 (0)\", \"文件工具 (0)\", \"加密工具 (0)\", \"AI 工具 (0)\", \"系统工具 (2)\"); at most 2",
+   "fix": "few actions, one wording: at most 2 in the hero, the main action word for word in nav, hero and close",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "copy-actions"
+   ],
+   "wheres": [
+    "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(2) > button.flex.items-center:nth-of-type(2) \"网络工具 (0)\""
+   ]
+  },
+  {
+   "check": "heading-scale",
+   "where": "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div:nth-of-type(1) > h3.text-xs.font-semibold \"示例工具模板\"",
+   "msg": "an h3 at 12px, as large as the smallest h2 (12px) or larger (and 2 more like it: \"系统设置\", \"系统监控\")",
+   "fix": "size headings by level: the h1 largest, one size per level, each level below the one above",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "heading-scale"
+   ],
+   "wheres": [
+    "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div:nth-of-type(1) > h3.text-xs.font-semibold \"示例工具模板\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "header.flex.items-center > div.command-search.flex > button.flex.items-center > span.transition-colors \"搜索工具或命令...\"",
+   "msg": "a caption, label or muted line in #71717a on #16171d reads 3.7:1 (needs 4.5:1)",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "header.flex.items-center > div.command-search.flex > button.flex.items-center > span.transition-colors \"搜索工具或命令...\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.command-search.flex > button.flex.items-center > div.flex.items-center > span.kbd-badge:nth-of-type(1) \"Ctrl\"",
+   "msg": "a caption, label or muted line in #71717a on #1c1d25 reads 3.47:1 (needs 4.5:1); 4 like it, like \"K\", \"Ctrl\", \"K\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.command-search.flex > button.flex.items-center > div.flex.items-center > span.kbd-badge:nth-of-type(1) \"Ctrl\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.flex.flex-1 > aside.app-sidebar.flex > div.flex.items-center:nth-of-type(1) > span.font-bold.uppercase \"导航工作区\"",
+   "msg": "a caption, label or muted line in #71717a on #111217 reads 3.87:1 (needs 4.5:1); 6 like it, like \"这是一个基础工具骨架模板，演示如何编写独立工\", \"调整应用背景图片、透明度与虚化效果\", \"查看本机硬件配置、资源占用与进程性能\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.flex.flex-1 > aside.app-sidebar.flex > div.flex.items-center:nth-of-type(1) > span.font-bold.uppercase \"导航工作区\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "aside.app-sidebar.flex > div.flex-1.overflow-y-auto > div:nth-of-type(1) > div.font-semibold.uppercase \"工作空间\"",
+   "msg": "a caption, label or muted line in #71717b on #111217 reads 3.87:1 (needs 4.5:1); 12 like it, like \"工具分类\", \"(1)\", \"(0)\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "aside.app-sidebar.flex > div.flex-1.overflow-y-auto > div:nth-of-type(1) > div.font-semibold.uppercase \"工作空间\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div:nth-of-type(1) > div:nth-of-type(2) > button.flex.items-center:nth-of-type(2) > span.font-mono.rounded-full \"3\"",
+   "msg": "a caption, label or muted line in #71717a on #242631 reads 3.11:1 (needs 4.5:1); 10 like it, like \"0\", \"0\", \"1\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div:nth-of-type(1) > div:nth-of-type(2) > button.flex.items-center:nth-of-type(2) > span.font-mono.rounded-full \"3\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div:nth-of-type(1) > div.ml-5.pl-2 > button.flex.items-center > span.text-xs.opacity-70 \"⚡\"",
+   "msg": "a caption, label or muted line in #76767e on #111217 reads 4.15:1 (needs 4.5:1); 3 like it, like \"设\", \"SYS\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div:nth-of-type(1) > div.ml-5.pl-2 > button.flex.items-center > span.text-xs.opacity-70 \"⚡\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > div > p.text-xs.leading-relaxed \"固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快速定位或打开工具\"",
+   "msg": "a caption, label or muted line in #71717a on #090a0d reads 4.1:1 (needs 4.5:1)",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > div > p.text-xs.leading-relaxed \"固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快速定位或打开工具\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(2) > div.flex.items-center > span.font-mono.text-zinc-500 \"(3)\"",
+   "msg": "a caption, label or muted line in #71717b on #090a0d reads 4.1:1 (needs 4.5:1)",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(2) > div.flex.items-center > span.font-mono.text-zinc-500 \"(3)\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.relative.z-10 > footer.app-statusbar.flex > div.hidden.items-center > span:nth-of-type(1) \"按下\"",
+   "msg": "a caption, label or muted line in #4b4b52 on #111217 reads 2.16:1 (needs 4.5:1); 2 like it, like \"呼出全局命令面板\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.relative.z-10 > footer.app-statusbar.flex > div.hidden.items-center > span:nth-of-type(1) \"按下\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.relative.z-10 > footer.app-statusbar.flex > div.hidden.items-center > span.kbd-badge:nth-of-type(2) \"Ctrl\"",
+   "msg": "a caption, label or muted line in #4f4f58 on #1c1d25 reads 2.08:1 (needs 4.5:1); 2 like it, like \"K\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.relative.z-10 > footer.app-statusbar.flex > div.hidden.items-center > span.kbd-badge:nth-of-type(2) \"Ctrl\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.relative.z-10 > footer.app-statusbar.flex > div.flex.items-center:nth-of-type(3) > span.text-zinc-700 \"|\"",
+   "msg": "a caption, label or muted line in #3f3f47 on #111217 reads 1.79:1 (needs 4.5:1)",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.relative.z-10 > footer.app-statusbar.flex > div.flex.items-center:nth-of-type(3) > span.text-zinc-700 \"|\""
+   ]
+  },
+  {
+   "check": "focus-visible",
+   "where": "div.relative.z-10 > header.flex.items-center > div.command-search.flex:nth-of-type(2) > button.flex.items-center \"搜索工具或命令... Ctrl K\"",
+   "msg": "Tab stop 1, button \"搜索工具或命令... Ctrl K\": its focus change is faint: 1.38:1 against the ground, 3:1 needed",
+   "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "focus-visible"
+   ],
+   "wheres": [
+    "div.relative.z-10 > header.flex.items-center > div.command-search.flex:nth-of-type(2) > button.flex.items-center \"搜索工具或命令... Ctrl K\""
+   ]
+  },
+  {
+   "check": "focus-visible",
+   "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(1) \"最小化\"",
+   "msg": "Tab stop 2, button \"最小化\": its focus change is faint: 2.9:1 against the ground, 3:1 needed",
+   "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "focus-visible"
+   ],
+   "wheres": [
+    "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(1) \"最小化\""
+   ]
+  },
+  {
+   "check": "focus-visible",
+   "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(2) \"最大化\"",
+   "msg": "Tab stop 3, button \"最大化\": its focus change is faint: 1.7:1 against the ground, 3:1 needed",
+   "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "focus-visible"
+   ],
+   "wheres": [
+    "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(2) \"最大化\""
+   ]
+  },
+  {
+   "check": "focus-visible",
+   "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(3) \"关闭\"",
+   "msg": "Tab stop 4, button \"关闭\": its focus change is faint: 1.27:1 against the ground, 3:1 needed",
+   "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "focus-visible"
+   ],
+   "wheres": [
+    "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(3) > button.w-11.h-full:nth-of-type(3) \"关闭\""
+   ]
+  },
+  {
+   "check": "action-repeat",
+   "where": "div:nth-of-type(1) > div.flex.items-center > div.flex.items-center:nth-of-type(2) > button.w-6.h-6 \"添加收藏\"",
+   "msg": "\"添加收藏\" shows 3 times on the first screen at 1440px (hero, hero, hero): three copies of one action on a screen read as clutter",
+   "fix": "show the action once a screen besides the nav's button: the hero's, the close's or the phone bar's, never all at once",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "action-repeat"
+   ],
+   "wheres": [
+    "div:nth-of-type(1) > div.flex.items-center > div.flex.items-center:nth-of-type(2) > button.w-6.h-6 \"添加收藏\""
+   ]
+  },
+  {
+   "check": "moment-none",
+   "where": "(the page)",
+   "msg": "a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)",
+   "fix": "deal one (moments.mjs pick --page software) and mount it in its own section",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "moment-none"
+   ],
+   "wheres": [
+    "(the page)"
+   ]
+  },
+  {
+   "check": "hidden-content",
+   "where": "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div.mt-4.border-t > span.opacity-0.transition-opacity \"打开工具 →\"",
+   "msg": "with reduced motion asked for 3 lines stay hidden on the first screen, 0.7 s after it was scrolled to (opacity 0): \"打开工具 →\", \"打开工具 →\": the page shows it only when a script reveals it",
+   "fix": "show the content at rest: the hidden state only under a class the script adds on its live path, never in the plain CSS (prefers-reduced-motion and a script that never runs show the finished page)",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "hidden-content"
+   ],
+   "wheres": [
+    "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div.mt-4.border-t > span.opacity-0.transition-opacity \"打开工具 →\""
+   ]
+  },
+  {
+   "check": "hero-screen",
+   "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\"",
+   "msg": "the hero ends at 872px on a 900px screen, 28px above the fold: it ends at the fold, 1px either way (SR-1)",
+   "fix": "make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "hero-screen"
+   ],
+   "wheres": [
+    "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\""
+   ]
+  },
+  {
+   "check": "hero-screen",
+   "where": "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\"",
+   "msg": "28px of the next section shows on the first screen (from 872px on a 900px screen): nothing below the hero shows at load (SR-1)",
+   "fix": "end the hero at the fold so nothing of the next section shows at load (hero height: 100svh)",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "hero-screen"
+   ],
+   "wheres": [
+    "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\"",
+   "msg": "the section is 28px tall (0 screens), 872px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)",
+   "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\"",
+   "msg": "the section starts at 42px, 42px below the screen grid (0 x 900px): sections start on whole screens (SR-2)",
+   "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\"",
+   "msg": "the screen at scroll 0px (stride 0) shows 28px of section 2 beside section 1: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+   "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\"",
+   "msg": "a <div> sits directly in <main>: every part of <main> is a <section> (SR-4)",
+   "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\""
+   ]
+  },
+  {
+   "check": "one-heading",
+   "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(2) > div.flex.items-center > h2.text-xs.font-semibold \"推荐工具\"",
+   "msg": "the hero holds an h2 (1): its heading is the h1, and an h2 opens the next section (SR-5)",
+   "fix": "give each section one h2, first in its .wrap, and the hero only its h1",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-heading"
+   ],
+   "wheres": [
+    "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(2) > div.flex.items-center > h2.text-xs.font-semibold \"推荐工具\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\"",
+   "msg": "the content of section 1 runs 392px from the left and 14px from the right (read from its outermost blocks: no .wrap): 392 and 14px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+   "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.flex.flex-1 > div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto \"桌面端工具集合应用 固定应用外壳 + 动态工具工作区 · 快捷键 CtrlK 快\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\"",
+   "msg": "the content of section 2 runs 392px from the left and 14px from the right (read from its outermost blocks: no .wrap): 392 and 14px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+   "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#app > div.relative.flex > div.relative.z-10 > footer.app-statusbar.flex \"就绪按下CtrlK呼出全局命令面板已打开标签: 0|v1.0.0\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#app > div.relative.flex > div.relative.z-10 > header.flex.items-center \"Moyu Toolbox 搜索工具或命令...CtrlK\"",
+   "msg": "the nav's content runs 48px from the left and 0px from the right (read from its outermost blocks: no .wrap): the page's container starts at 392px; 48 and 0px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+   "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#app > div.relative.flex > div.relative.z-10 > header.flex.items-center \"Moyu Toolbox 搜索工具或命令...CtrlK\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#app \"Moyu Toolbox 搜索工具或命令...CtrlK 导航工作区 工作空间 \"",
+   "msg": "a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+   "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#app \"Moyu Toolbox 搜索工具或命令...CtrlK 导航工作区 工作空间 \""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.relative.flex > span.animate-ping.absolute",
+   "msg": "a box runs 12-24px, outside the container lines of section 2 at 392-1426px: full width is for background layers and grounds only (SR-6)",
+   "fix": "keep it inside the container lines (.wrap): full width is for background layers and grounds only",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.relative.flex > span.animate-ping.absolute"
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(1) > div.w-6.h-6",
+   "msg": "a box runs 14-38px, outside the container lines of the nav at 392-1426px: full width is for background layers and grounds only (and 4 more like it: div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.relative.flex > span.relative.inline-flex, \"就绪\", \"Moyu Toolbox\") (SR-6)",
+   "fix": "keep it inside the container lines (.wrap): full width is for background layers and grounds only",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.relative.z-10 > header.flex.items-center > div.flex.items-center:nth-of-type(1) > div.w-6.h-6"
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "footer.app-statusbar.flex > div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.font-medium \"就绪\"",
+   "msg": "1 text block starts on a left line at x 30, -362px from the container's left: text starts on the container's left, or on one split line (x 833, 921, 1009) (SR-6)",
+   "fix": "start the text on the container's left, or on the one split line every split shares",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "footer.app-statusbar.flex > div.flex.items-center:nth-of-type(1) > div.flex.items-center > span.font-medium \"就绪\""
+   ]
+  },
+  {
+   "check": "row-lines",
+   "where": "div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(3) \"⚡dev示例工具模板这是一个基础工具骨架模板，演示如何编写独立工具组件#demo\"",
+   "msg": "a row of 3 items: its last item ends at 1288px, the container's right line at 1426px (2px either way) (SR-7)",
+   "fix": "start the row's first item on the container's left line and end its last on the right line, every item one height",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "row-lines"
+   ],
+   "wheres": [
+    "div.flex.flex-col > main.flex-1.min-h-0 > div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(3) \"⚡dev示例工具模板这是一个基础工具骨架模板，演示如何编写独立工具组件#demo\""
+   ]
+  },
+  {
+   "check": "button-styles",
+   "where": "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > button.flex.items-center \"搜索工具...\"",
+   "msg": "one button style (soft, fill #111217, outline #23252f) in 2 heights: 30, 46px (\"搜索工具...\" 46px, \"开发工具 (1)\" 30px)",
+   "fix": "one primary and one secondary button: one shape, one height per size, one label size",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "button-styles"
+   ],
+   "wheres": [
+    "div.h-full.overflow-y-auto > div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(1) > button.flex.items-center \"搜索工具...\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.flex.items-center:nth-of-type(1) > div > p.text-xs.leading-relaxed > span.kbd-badge.mx-1 \"Ctrl\"",
+   "msg": "a caption, label or muted line in #71717a on #1c1d25 reads 3.47:1 (needs 4.5:1); 2 like it, like \"K\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.flex.items-center:nth-of-type(1) > div > p.text-xs.leading-relaxed > span.kbd-badge.mx-1 \"Ctrl\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(2) > button.flex.items-center:nth-of-type(1) > span.font-mono.text-zinc-500 \"(1)\"",
+   "msg": "a caption, label or muted line in #71717b on #111217 reads 3.87:1 (needs 4.5:1); 9 like it, like \"(0)\", \"(0)\", \"(0)\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.max-w-4xl.mx-auto:nth-of-type(1) > div.flex.items-center:nth-of-type(2) > button.flex.items-center:nth-of-type(1) > span.font-mono.text-zinc-500 \"(1)\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div:nth-of-type(1) > p.leading-relaxed.line-clamp-2 \"这是一个基础工具骨架模板，演示如何编写独立工具组件\"",
+   "msg": "a caption, label or muted line in #71717a on #111217 reads 3.87:1 (needs 4.5:1); 3 like it, like \"调整应用背景图片、透明度与虚化效果\", \"查看本机硬件配置、资源占用与进程性能\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "div.max-w-4xl.mx-auto:nth-of-type(3) > div.card-glow.rounded-xl:nth-of-type(1) > div:nth-of-type(1) > p.leading-relaxed.line-clamp-2 \"这是一个基础工具骨架模板，演示如何编写独立工具组件\""
+   ]
+  },
+  {
+   "check": "container",
+   "where": "page",
+   "msg": "no .wrap",
+   "fix": "put the content in one .wrap",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "layout",
+   "ids": [
+    "container"
+   ],
+   "wheres": [
+    "page"
+   ]
+  }
+ ],
+ "waived": [],
+ "warnCount": 12,
+ "at": "2026-11-25T02:28:12.795Z"
+}
