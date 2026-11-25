@@ -33,7 +33,7 @@ function windowOptions(state: WindowState): Electron.BrowserWindowConstructorOpt
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
-    title: 'Visual Studio Code',
+    title: '摸鱼神器',
     backgroundColor: '#090a0d',
     icon: resourcePath('icon.png'),
     webPreferences: {
