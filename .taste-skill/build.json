@@ -1,0 +1,11 @@
+{
+ "page": null,
+ "url": "http://127.0.0.1:9999/",
+ "root": null,
+ "kind": "software",
+ "category": "本机系统监控工具",
+ "primary": "刷新系统数据",
+ "rounds": 3,
+ "start": "2026-11-25T01:35:20.477Z",
+ "by": "gate.mjs --start"
+}

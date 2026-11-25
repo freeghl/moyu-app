@@ -15,7 +15,10 @@ function handleToolClick(toolId: string): void {
 </script>
 
 <template>
-  <main class="flex-1 min-h-0 relative overflow-hidden" style="background: var(--color-bg-base)">
+  <main
+    class="flex-1 min-h-0 relative overflow-hidden"
+    :style="{ background: 'var(--workarea-bg, var(--color-bg-base))' }"
+  >
     <!-- Empty / Dashboard Home View when no tabs are opened -->
     <HomeView v-if="showHome" @open-tool="handleToolClick" />
 

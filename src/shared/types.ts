@@ -6,6 +6,7 @@ export type ToolCategory =
   | 'file'
   | 'crypto'
   | 'ai'
+  | 'system'
 
 /** Navigation workspace items */
 export type WorkspaceItem = 'home' | 'all' | 'favorites' | 'recent'
@@ -36,4 +37,23 @@ export interface CategoryInfo {
   name: string
   icon: string
   collapsed?: boolean
+}
+
+export interface BackgroundImage {
+  fileName: string
+  originalName: string
+  dataUrl: string
+}
+
+export interface BackgroundPreferences {
+  fileName: string
+  originalName: string
+  opacity: number
+  blur: number
+}
+
+export interface BackgroundAPI {
+  select: () => Promise<BackgroundImage | null>
+  load: (fileName: string) => Promise<BackgroundImage | null>
+  remove: (fileName: string) => Promise<void>
 }

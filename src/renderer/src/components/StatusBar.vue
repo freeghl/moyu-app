@@ -11,10 +11,10 @@ const currentToolName = computed(() => {
 
 <template>
   <footer
-    class="flex items-center justify-between shrink-0 px-3.5 border-t select-none text-[11px]"
+    class="app-statusbar flex items-center justify-between shrink-0 px-3.5 border-t select-none text-[11px]"
     style="
       height: var(--statusbar-height);
-      background: var(--color-bg-elevated);
+      background: var(--shell-bg, var(--color-bg-elevated));
       border-color: var(--color-border-muted);
       color: var(--color-text-tertiary);
     "

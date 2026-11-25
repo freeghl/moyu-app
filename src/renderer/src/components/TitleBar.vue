@@ -34,7 +34,7 @@ function openSearch() {
     class="flex items-center justify-between shrink-0 border-b select-none"
     style="
       height: var(--titlebar-height);
-      background: var(--color-bg-elevated);
+      background: var(--shell-bg, var(--color-bg-elevated));
       border-color: var(--color-border-muted);
       -webkit-app-region: drag;
     "
@@ -59,7 +59,7 @@ function openSearch() {
     </div>
 
     <!-- Center: Raycast Style Command Search Trigger -->
-    <div class="flex items-center justify-center" style="-webkit-app-region: no-drag">
+    <div class="command-search flex items-center justify-center" style="-webkit-app-region: no-drag">
       <button
         class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 group"
         style="

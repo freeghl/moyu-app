@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import AppLayout from './layouts/AppLayout.vue'
-import { useNavStore } from './stores'
+import { useNavStore, useSettingsStore } from './stores'
 import { onMounted } from 'vue'
 
 const navStore = useNavStore()
+const settingsStore = useSettingsStore()
 
 onMounted(() => {
   navStore.init()
+  void settingsStore.init()
   
   // Listen for global search shortcut
   window.api?.onToggleSearch(() => {

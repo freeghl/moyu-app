@@ -1,4 +1,6 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
+import type { BackgroundAPI } from '@shared/types'
+import type { SystemAPI } from '@shared/system'
 
 export interface WindowAPI {
   minimize: () => Promise<void>
@@ -9,7 +11,9 @@ export interface WindowAPI {
 }
 
 export interface AppAPI {
+  system: SystemAPI
   window: WindowAPI
+  background: BackgroundAPI
   onToggleSearch: (callback: () => void) => void
 }
 

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, shallowRef, markRaw } from 'vue'
+import { ref, computed, shallowRef, markRaw, defineAsyncComponent } from 'vue'
 import type { TabItem } from '@shared/types'
 import { toolRegistry } from '../registry'
 
@@ -38,7 +38,7 @@ export const useTabStore = defineStore('tabs', () => {
     }
 
     // Store the component loader
-    tabComponents.value.set(tabId, markRaw(tool.component))
+    tabComponents.value.set(tabId, markRaw(defineAsyncComponent(tool.component)))
 
     tabs.value.push(tab)
     activeTabId.value = tabId

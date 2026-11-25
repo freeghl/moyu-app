@@ -8,7 +8,8 @@ export const categories: CategoryInfo[] = [
   { id: 'image', name: '图片工具', icon: 'photo' },
   { id: 'file', name: '文件工具', icon: 'folder' },
   { id: 'crypto', name: '加密工具', icon: 'lock-closed' },
-  { id: 'ai', name: 'AI 工具', icon: 'sparkles' }
+  { id: 'ai', name: 'AI 工具', icon: 'sparkles' },
+  { id: 'system', name: '系统工具', icon: 'computer-desktop' }
 ]
 
 export const useNavStore = defineStore('nav', () => {
