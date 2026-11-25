@@ -70,8 +70,8 @@ export function createDefaultPreferences(): AppPreferences {
     },
     window: { width: 1400, height: 900, maximized: false },
     session: {
-      tabs: ['moyu-resources'],
-      activeToolId: 'moyu-resources',
+      tabs: [],
+      activeToolId: null,
       workspace: 'home',
       category: null,
       sidebarCollapsed: false,

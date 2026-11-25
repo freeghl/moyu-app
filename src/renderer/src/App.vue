@@ -17,7 +17,6 @@ function openMoyuBrowser(): void {
 onMounted(async () => {
   await prefsStore.init()
   tabStore.restore()
-  if (!tabStore.tabs.length) openMoyuBrowser()
   ready.value = true
 
   window.api?.onToggleBoss(() => {
