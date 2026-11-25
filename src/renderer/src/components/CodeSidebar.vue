@@ -1,5 +1,8 @@
 <template>
-  <aside class="flex h-full shrink-0 border-r border-(--color-border-muted) bg-(--color-bg-elevated)" style="width: 258px">
+  <aside
+    class="flex h-full shrink-0 border-r border-(--color-border-muted)"
+    style="width: 258px; background: var(--shell-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px)"
+  >
     <div class="flex w-11 shrink-0 flex-col items-center border-r border-(--color-border-muted) py-2 text-(--color-text-tertiary)">
       <span class="mb-3 text-(--color-text-primary)" title="资源管理器">
         <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">

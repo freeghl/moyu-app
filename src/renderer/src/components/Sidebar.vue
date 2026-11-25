@@ -55,8 +55,9 @@ function openSettings(): void {
     class="flex flex-col shrink-0 border-r select-none transition-all duration-200"
     :style="{
       width: navStore.sidebarCollapsed ? 'var(--sidebar-collapsed-width)' : 'var(--sidebar-width)',
-      background: 'var(--color-bg-elevated)',
-      borderColor: 'var(--color-border-muted)'
+      background: 'var(--shell-bg)',
+      borderColor: 'var(--color-border-muted)',
+      backdropFilter: 'blur(16px)'
     }"
   >
     <!-- Top Bar / Collapse Toggle -->

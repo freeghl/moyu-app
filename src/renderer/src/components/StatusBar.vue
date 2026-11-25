@@ -16,7 +16,7 @@ const currentToolName = computed(() => {
     class="flex items-center justify-between shrink-0 border-t select-none text-[11px]"
     :style="{
       height: 'var(--statusbar-height)',
-      background: disguise ? '#007acc' : 'var(--color-bg-elevated)',
+      background: disguise ? '#007acc' : 'var(--shell-bg)',
       borderColor: disguise ? 'transparent' : 'var(--color-border-muted)',
       color: disguise ? '#ffffff' : 'var(--color-text-tertiary)'
     }"

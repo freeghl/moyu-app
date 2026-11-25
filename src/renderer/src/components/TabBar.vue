@@ -72,8 +72,10 @@ onBeforeUnmount(() => window.removeEventListener('pointerdown', closeMenu))
     class="flex items-end shrink-0 overflow-x-auto border-b select-none"
     style="
       height: var(--tabbar-height);
-      background: var(--shell-bg, var(--color-bg-elevated));
+      background: var(--shell-bg);
       border-color: var(--color-border-muted);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     "
     v-show="tabStore.tabs.length > 0"
   >

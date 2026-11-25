@@ -37,7 +37,7 @@ function updateBlur(event: Event): void {
         </div>
         <span
           class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm"
-          style="background: var(--color-bg-elevated); border-color: var(--color-border-muted); color: var(--color-text-secondary)"
+          style="background: var(--panel-bg); border-color: var(--panel-border); color: var(--color-text-secondary)"
         >
           <span
             class="h-2 w-2 rounded-full"
@@ -48,14 +48,14 @@ function updateBlur(event: Event): void {
       </header>
 
       <section
-        class="overflow-hidden rounded-2xl border"
-        style="background: var(--color-bg-elevated); border-color: var(--color-border-muted)"
+        class="glass-panel overflow-hidden rounded-2xl border"
+        style="background: var(--panel-bg); border-color: var(--panel-border)"
         aria-labelledby="background-heading"
       >
         <div class="flex items-center gap-3 border-b p-5" style="border-color: var(--color-border-muted)">
           <div
             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-            style="background: var(--color-bg-overlay); color: var(--color-text-secondary)"
+            style="background: var(--control-bg); color: var(--color-text-secondary)"
           >
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5a2.25 2.25 0 0 0 2.25-2.25V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
@@ -97,7 +97,7 @@ function updateBlur(event: Event): void {
             <div v-else class="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
               <div
                 class="flex h-14 w-14 items-center justify-center rounded-2xl"
-                style="background: var(--color-bg-overlay); color: var(--color-text-tertiary)"
+                style="background: var(--control-bg); color: var(--color-text-tertiary)"
               >
                 <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5V18a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-1.5M7.5 7.5 12 3l4.5 4.5M12 3v12m6.75 3.75H5.25" />
@@ -155,7 +155,7 @@ function updateBlur(event: Event): void {
               <button
                 v-if="settingsStore.isDirty"
                 class="settings-action inline-flex min-h-11 items-center justify-center rounded-lg border px-4 text-sm font-medium"
-                style="background: var(--color-bg-overlay); border-color: var(--color-border-default); color: var(--color-text-secondary)"
+                style="background: var(--control-bg); border-color: var(--color-border-default); color: var(--color-text-secondary)"
                 :disabled="settingsStore.isLoading"
                 @click="settingsStore.cancelChanges()"
               >
@@ -167,7 +167,7 @@ function updateBlur(event: Event): void {
               <div>
                 <div class="mb-1 flex items-center justify-between gap-3">
                   <label for="background-opacity" class="text-sm font-medium" style="color: var(--color-text-secondary)">透明度</label>
-                  <output for="background-opacity" class="min-w-12 rounded-md px-2 py-1 text-center font-mono text-sm" style="background: var(--color-bg-overlay); color: var(--color-text-primary)">
+                  <output for="background-opacity" class="min-w-12 rounded-md px-2 py-1 text-center font-mono text-sm" style="background: var(--control-bg); color: var(--color-text-primary)">
                     {{ settingsStore.opacity }}%
                   </output>
                 </div>
@@ -194,7 +194,7 @@ function updateBlur(event: Event): void {
               <div>
                 <div class="mb-1 flex items-center justify-between gap-3">
                   <label for="background-blur" class="text-sm font-medium" style="color: var(--color-text-secondary)">背景虚化</label>
-                  <output for="background-blur" class="min-w-12 rounded-md px-2 py-1 text-center font-mono text-sm" style="background: var(--color-bg-overlay); color: var(--color-text-primary)">
+                  <output for="background-blur" class="min-w-12 rounded-md px-2 py-1 text-center font-mono text-sm" style="background: var(--control-bg); color: var(--color-text-primary)">
                     {{ settingsStore.blur }}px
                   </output>
                 </div>
@@ -222,7 +222,7 @@ function updateBlur(event: Event): void {
             <div class="flex flex-col gap-2 sm:flex-row">
               <button
                 class="settings-action inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border px-3 text-sm font-medium"
-                style="background: var(--color-bg-overlay); border-color: var(--color-border-default); color: var(--color-text-secondary)"
+                style="background: var(--control-bg); border-color: var(--color-border-default); color: var(--color-text-secondary)"
                 :disabled="!canAdjust"
                 @click="settingsStore.resetParameters"
               >

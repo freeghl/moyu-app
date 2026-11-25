@@ -68,10 +68,10 @@ function openSearch() {
         </div>
 
         <button
-          class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shadow-sm border group"
+          class="glass-panel flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shadow-sm border group hover:border-indigo-500/40"
           style="
-            background: var(--color-bg-elevated);
-            border-color: var(--color-border-default);
+            background: var(--panel-bg);
+            border-color: var(--panel-border);
             color: var(--color-text-secondary);
           "
           @click="openSearch"
@@ -89,7 +89,7 @@ function openSearch() {
           v-for="cat in categories"
           :key="cat.id"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border hover:border-indigo-500/40"
-          style="background: var(--color-bg-elevated); border-color: var(--color-border-muted); color: var(--color-text-secondary)"
+          style="background: var(--panel-bg); border-color: var(--panel-border); color: var(--color-text-secondary)"
           @click="navStore.setCategory(cat.id)"
         >
           <span>{{ cat.name }}</span>
@@ -119,10 +119,10 @@ function openSearch() {
     <!-- Empty State -->
     <div
       v-if="displayTools.length === 0"
-      class="max-w-4xl mx-auto rounded-2xl border p-12 text-center"
-      style="background: var(--color-bg-elevated); border-color: var(--color-border-muted)"
+      class="glass-panel max-w-4xl mx-auto rounded-2xl border p-12 text-center"
+      style="background: var(--panel-bg); border-color: var(--panel-border)"
     >
-      <div class="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3" style="background: var(--color-bg-overlay)">
+      <div class="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3" style="background: var(--control-bg)">
         📂
       </div>
       <h3 class="text-sm font-semibold" style="color: var(--color-text-secondary)">
@@ -140,8 +140,8 @@ function openSearch() {
         :key="tool.id"
         class="card-glow rounded-xl border p-4 text-left transition-all group flex flex-col justify-between cursor-pointer relative"
         style="
-          background: var(--color-bg-elevated);
-          border-color: var(--color-border-muted);
+          background: var(--panel-bg);
+          border-color: var(--panel-border);
         "
         @click="emit('open-tool', tool.id)"
       >
@@ -150,13 +150,13 @@ function openSearch() {
           <div class="flex items-center justify-between mb-3">
             <div
               class="w-9 h-9 rounded-lg flex items-center justify-center text-base font-semibold shrink-0 shadow-sm"
-              style="background: var(--color-bg-overlay); color: var(--color-text-secondary)"
+              style="background: var(--control-bg); color: var(--color-text-secondary)"
             >
               {{ tool.icon }}
             </div>
 
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded-md text-zinc-400" style="background: var(--color-bg-muted)">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-md text-zinc-400" style="background: var(--control-bg)">
                 {{ tool.category }}
               </span>
 
@@ -187,7 +187,7 @@ function openSearch() {
         </div>
 
         <!-- Footer / Launch Hint -->
-        <div class="mt-4 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color: var(--color-border-subtle)">
+        <div class="mt-4 pt-2.5 border-t flex items-center justify-between text-[11px]" style="border-color: var(--panel-border)">
           <span class="text-zinc-500 font-mono text-[10px]">#{{ tool.id }}</span>
           <span class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-400 font-medium flex items-center gap-1">
             打开工具 →

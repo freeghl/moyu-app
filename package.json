@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "pinia": "^2.2.0",
+    "systeminformation": "^5.33.24",
     "vue": "^3.5.0"
   }
 }

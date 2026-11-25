@@ -108,10 +108,10 @@ onUnmounted(() => {
         @click.self="isOpen = false"
       >
         <div
-          class="w-full max-w-[560px] rounded-2xl border overflow-hidden shadow-2xl transition-all"
+          class="glass-panel w-full max-w-[560px] rounded-2xl border overflow-hidden shadow-2xl transition-all"
           style="
-            background: rgba(18, 19, 24, 0.95);
-            border-color: var(--color-border-default);
+            background: var(--panel-strong-bg);
+            border-color: var(--panel-border);
             box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08);
           "
         >
@@ -154,7 +154,7 @@ onUnmounted(() => {
               <!-- Icon Box -->
               <div
                 class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold shrink-0"
-                style="background: var(--color-bg-overlay); color: var(--color-text-secondary)"
+                style="background: var(--control-bg); color: var(--color-text-secondary)"
               >
                 {{ tool.icon }}
               </div>
@@ -170,7 +170,7 @@ onUnmounted(() => {
               </div>
 
               <!-- Category Tag -->
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded-md text-zinc-400 shrink-0" style="background: var(--color-bg-muted)">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-md text-zinc-400 shrink-0" style="background: var(--control-bg)">
                 {{ categoryName(tool.category) }}
               </span>
 
@@ -190,7 +190,7 @@ onUnmounted(() => {
           <!-- Footer Hints (Raycast style) -->
           <div
             class="flex items-center justify-between px-4 py-2 border-t text-[11px]"
-            style="border-color: var(--color-border-muted); color: var(--color-text-tertiary); background: var(--color-bg-elevated)"
+            style="border-color: var(--panel-border); color: var(--color-text-tertiary); background: var(--panel-strong-bg)"
           >
             <div class="flex items-center gap-3">
               <span class="flex items-center gap-1"><span class="kbd-badge">↑↓</span> 导航</span>

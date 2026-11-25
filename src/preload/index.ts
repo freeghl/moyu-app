@@ -41,6 +41,16 @@ const api: AppAPI = {
   shortcuts: {
     apply: (bossKey, hideKey, summonKey) => ipcRenderer.invoke('shortcuts:apply', bossKey, hideKey, summonKey)
   },
+  background: {
+    select: () => ipcRenderer.invoke('background:select'),
+    load: (fileName) => ipcRenderer.invoke('background:load', fileName),
+    remove: (fileName) => ipcRenderer.invoke('background:remove', fileName)
+  },
+  system: {
+    getSnapshot: () => ipcRenderer.invoke('system:getSnapshot'),
+    getMetrics: () => ipcRenderer.invoke('system:getMetrics'),
+    getProcesses: () => ipcRenderer.invoke('system:getProcesses')
+  },
   onToggleBoss: (callback) => subscribe('moyu:toggle-boss', callback),
   onToggleSearch: (callback) => subscribe('global:toggle-search', callback)
 }

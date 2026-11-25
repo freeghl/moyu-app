@@ -21,7 +21,7 @@ const textInput = ref('')
     </div>
 
     <!-- State retention test card -->
-    <div class="rounded-xl border p-5 max-w-xl space-y-4" style="background: var(--color-bg-elevated); border-color: var(--color-border-muted)">
+    <div class="glass-panel rounded-xl border p-5 max-w-xl space-y-4" style="background: var(--panel-bg); border-color: var(--panel-border)">
       <h3 class="text-sm font-medium" style="color: var(--color-text-primary)">状态保持验证</h3>
       <p class="text-xs" style="color: var(--color-text-tertiary)">
         在下方输入内容或增加计数，切换到其他页面或标签后再切换回来，状态不会丢失。
@@ -37,7 +37,7 @@ const textInput = ref('')
         </button>
         <button
           class="px-3 py-1.5 rounded-lg text-xs transition-colors hover:bg-white/5 border"
-          style="background: var(--color-bg-overlay); border-color: var(--color-border-default); color: var(--color-text-secondary)"
+          style="background: var(--control-bg); border-color: var(--color-border-default); color: var(--color-text-secondary)"
           @click="count = 0"
         >
           重置
@@ -49,7 +49,7 @@ const textInput = ref('')
         <input
           v-model="textInput"
           class="w-full px-3 py-2 rounded-lg text-xs outline-none border transition-colors focus:border-indigo-500"
-          style="background: var(--color-bg-overlay); border-color: var(--color-border-default); color: var(--color-text-primary)"
+          style="background: var(--control-bg); border-color: var(--color-border-default); color: var(--color-text-primary)"
           placeholder="在此输入任意内容测试状态保持..."
         />
       </div>

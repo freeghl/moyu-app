@@ -29,7 +29,7 @@ function close(): void {
 <template>
   <header
     class="flex h-10 shrink-0 items-center justify-between border-b border-(--color-border-muted) select-none"
-    style="background: var(--color-bg-elevated); -webkit-app-region: drag"
+    style="background: var(--shell-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); -webkit-app-region: drag"
   >
     <div class="flex min-w-0 flex-1 items-center gap-1 pl-3" style="-webkit-app-region: no-drag">
       <div class="mr-2 flex h-5 w-5 items-center justify-center rounded bg-(--color-accent) text-white">

@@ -17,7 +17,7 @@ function handleToolClick(toolId: string): void {
 </script>
 
 <template>
-  <main class="flex-1 min-h-0 relative overflow-hidden" style="background: var(--color-bg-base)">
+  <main class="flex-1 min-h-0 relative overflow-hidden" style="background: var(--workarea-bg)">
     <SettingsPanel v-if="navStore.isSettings" />
 
     <template v-else>

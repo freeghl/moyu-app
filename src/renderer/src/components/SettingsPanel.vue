@@ -2,8 +2,10 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { AppSettings } from '@shared/preferences'
 import { usePrefsStore } from '../stores/prefsStore'
+import { useSettingsStore } from '../stores/settingsStore'
 
 const prefs = usePrefsStore()
+const backgroundSettings = useSettingsStore()
 
 const version = ref('')
 const dataDir = ref('')
@@ -12,6 +14,24 @@ const shortcutError = ref('')
 const shortcutSaving = ref(false)
 
 const settings = computed(() => prefs.state.settings)
+const canAdjustBackground = computed(() => backgroundSettings.hasDraftBackground && !backgroundSettings.isLoading)
+const backgroundPreviewStyle = computed(() => ({
+  opacity: backgroundSettings.opacity / 100,
+  filter: `blur(${backgroundSettings.blur}px)`,
+  transform: `scale(${1 + backgroundSettings.blur / 500})`
+}))
+
+function chooseBackground(): void {
+  void backgroundSettings.selectBackground()
+}
+
+function updateBackgroundOpacity(event: Event): void {
+  backgroundSettings.setOpacity(Number((event.target as HTMLInputElement).value))
+}
+
+function updateBackgroundBlur(event: Event): void {
+  backgroundSettings.setBlur(Number((event.target as HTMLInputElement).value))
+}
 
 onMounted(async () => {
   version.value = (await window.api?.app.version()) ?? ''
@@ -103,12 +123,101 @@ function hideToTray(): void {
       <header>
         <h1 class="text-lg font-semibold" style="color: var(--color-text-primary)">设置</h1>
         <p class="mt-1 text-xs" style="color: var(--color-text-tertiary)">
-          改动会立即生效并自动保存，不需要重启应用。
+          通用设置与快捷键会自动保存；背景图片调整后需点击“确定并应用”。
         </p>
       </header>
 
+      <section class="glass-panel rounded-xl border" style="background: var(--panel-bg); border-color: var(--panel-border)" aria-labelledby="background-heading">
+        <div class="flex items-center gap-3 border-b px-4 py-3" style="border-color: var(--panel-border)">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style="background: var(--control-bg); color: var(--color-text-secondary)">
+            <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5a2.25 2.25 0 0 0 2.25-2.25V5.25a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v13.5a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h2 id="background-heading" class="text-xs font-semibold" style="color: var(--color-text-primary)">应用背景</h2>
+            <p class="mt-1 text-[11px]" style="color: var(--color-text-tertiary)">选择本地图片，调整透明度与虚化，预览后应用到整个应用。</p>
+          </div>
+          <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px]" style="background: var(--control-bg); border-color: var(--panel-border); color: var(--color-text-secondary)">
+            <span class="h-1.5 w-1.5 rounded-full" :style="{ background: backgroundSettings.hasBackground ? 'var(--color-success)' : 'var(--color-text-disabled)' }"></span>
+            {{ backgroundSettings.hasBackground ? '背景已启用' : '默认背景' }}
+          </span>
+        </div>
+
+        <div class="grid gap-4 p-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <div class="relative aspect-[16/10] overflow-hidden rounded-xl border" style="background: var(--color-bg-base); border-color: var(--panel-border)">
+            <template v-if="backgroundSettings.hasDraftBackground">
+              <div class="absolute inset-0" :style="backgroundPreviewStyle">
+                <img :src="backgroundSettings.imageUrl" alt="应用背景预览" class="h-full w-full object-cover">
+              </div>
+              <span class="absolute inset-x-2 bottom-2 truncate rounded-md px-2 py-1 text-[10px] backdrop-blur-md" style="background: rgba(9, 10, 13, 0.72); color: var(--color-text-secondary)">
+                {{ backgroundSettings.originalName || backgroundSettings.fileName }}
+              </span>
+            </template>
+            <div v-else class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl" style="background: var(--control-bg); color: var(--color-text-tertiary)">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5V18a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-1.5M7.5 7.5 12 3l4.5 4.5M12 3v12m6.75 3.75H5.25" />
+                </svg>
+              </div>
+              <p class="text-[11px] font-medium" style="color: var(--color-text-secondary)">尚未选择背景图片</p>
+              <p class="text-[10px] leading-relaxed" style="color: var(--color-text-tertiary)">支持 PNG、JPG、WEBP、GIF、BMP，最大 20 MB</p>
+            </div>
+            <div v-if="backgroundSettings.isLoading" class="absolute inset-0 flex items-center justify-center" style="background: rgba(9, 10, 13, 0.58)" role="status" aria-label="正在处理背景图片">
+              <span class="h-6 w-6 animate-spin rounded-full border-2" style="border-color: var(--color-bg-muted); border-top-color: var(--color-accent)"></span>
+            </div>
+          </div>
+
+          <div class="min-w-0 space-y-3">
+            <p v-if="backgroundSettings.error" class="rounded-lg border px-3 py-2 text-[11px]" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.28); color: #fca5a5" role="alert">
+              {{ backgroundSettings.error }}
+            </p>
+            <p v-if="backgroundSettings.isDirty" class="rounded-lg border px-3 py-2 text-[11px]" style="background: var(--color-accent-muted); border-color: var(--panel-border); color: var(--color-text-secondary)" role="status">
+              当前为预览效果，点击“确定并应用”后才会应用到整个应用。
+            </p>
+
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="cursor-pointer rounded-md px-3 py-1.5 text-[11px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45" style="background: var(--color-accent)" :disabled="backgroundSettings.isLoading" @click="chooseBackground">
+                {{ backgroundSettings.hasDraftBackground ? '更换本地图片' : '选择本地图片' }}
+              </button>
+              <button type="button" class="cursor-pointer rounded-md px-3 py-1.5 text-[11px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45" style="background: var(--color-accent)" :disabled="!backgroundSettings.isDirty || backgroundSettings.isLoading" @click="backgroundSettings.applyBackground()">
+                确定并应用
+              </button>
+              <button v-if="backgroundSettings.isDirty" type="button" class="cursor-pointer rounded-md border px-3 py-1.5 text-[11px] transition hover:bg-white/[0.04] disabled:opacity-45" style="background: var(--control-bg); border-color: var(--panel-border); color: var(--color-text-secondary)" :disabled="backgroundSettings.isLoading" @click="backgroundSettings.cancelChanges()">
+                取消更改
+              </button>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <div class="mb-2 flex items-center justify-between text-[11px]">
+                  <label for="settings-background-opacity" style="color: var(--color-text-secondary)">透明度</label>
+                  <output for="settings-background-opacity" class="rounded px-1.5 py-0.5 font-mono" style="background: var(--control-bg); color: var(--color-text-primary)">{{ backgroundSettings.opacity }}%</output>
+                </div>
+                <input id="settings-background-opacity" type="range" min="0" max="100" step="1" class="h-1.5 w-full cursor-pointer accent-indigo-500 disabled:cursor-not-allowed disabled:opacity-40" :value="backgroundSettings.opacity" :disabled="!canAdjustBackground" @input="updateBackgroundOpacity">
+                <div class="mt-1 flex justify-between text-[10px]" style="color: var(--color-text-tertiary)"><span>透明</span><span>不透明</span></div>
+              </div>
+              <div>
+                <div class="mb-2 flex items-center justify-between text-[11px]">
+                  <label for="settings-background-blur" style="color: var(--color-text-secondary)">背景虚化</label>
+                  <output for="settings-background-blur" class="rounded px-1.5 py-0.5 font-mono" style="background: var(--control-bg); color: var(--color-text-primary)">{{ backgroundSettings.blur }}px</output>
+                </div>
+                <input id="settings-background-blur" type="range" min="0" max="40" step="1" class="h-1.5 w-full cursor-pointer accent-indigo-500 disabled:cursor-not-allowed disabled:opacity-40" :value="backgroundSettings.blur" :disabled="!canAdjustBackground" @input="updateBackgroundBlur">
+                <div class="mt-1 flex justify-between text-[10px]" style="color: var(--color-text-tertiary)"><span>清晰</span><span>高度虚化</span></div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="cursor-pointer rounded-md border px-2.5 py-1.5 text-[11px] transition hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-45" style="background: var(--control-bg); border-color: var(--panel-border); color: var(--color-text-secondary)" :disabled="!canAdjustBackground" @click="backgroundSettings.resetParameters()">恢复默认参数</button>
+              <button type="button" class="cursor-pointer rounded-md border px-2.5 py-1.5 text-[11px] transition hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-45" style="background: transparent; border-color: var(--panel-border); color: #fca5a5" :disabled="(!backgroundSettings.hasBackground && !backgroundSettings.hasDraftBackground) || backgroundSettings.isLoading" @click="backgroundSettings.removeBackground()">移除背景</button>
+            </div>
+            <p class="text-[10px] leading-relaxed" style="color: var(--color-text-tertiary)">图片仅保存在本机应用数据目录，不会上传；应用后重启仍会恢复。</p>
+          </div>
+        </div>
+      </section>
+
       <!-- 通用 -->
-      <div class="rounded-xl border" style="background: var(--color-bg-elevated); border-color: var(--color-border-muted)">
+      <div class="glass-panel rounded-xl border" style="background: var(--panel-bg); border-color: var(--panel-border)">
         <h2 class="border-b px-4 py-2.5 text-xs font-semibold" style="border-color: var(--color-border-muted); color: var(--color-text-secondary)">
           通用
         </h2>
@@ -160,7 +269,7 @@ function hideToTray(): void {
       </div>
 
       <!-- 快捷键 -->
-      <div class="rounded-xl border" style="background: var(--color-bg-elevated); border-color: var(--color-border-muted)">
+      <div class="glass-panel rounded-xl border" style="background: var(--panel-bg); border-color: var(--panel-border)">
         <h2 class="border-b px-4 py-2.5 text-xs font-semibold" style="border-color: var(--color-border-muted); color: var(--color-text-secondary)">
           全局快捷键
         </h2>
@@ -183,8 +292,8 @@ function hideToTray(): void {
                 type="button"
                 class="min-w-[168px] cursor-pointer rounded-md border px-3 py-1.5 font-mono text-[11px] transition-colors"
                 :style="{
-                  background: recordField === item.field ? 'var(--color-accent-muted)' : 'var(--color-bg-base)',
-                  borderColor: recordField === item.field ? 'var(--color-accent)' : 'var(--color-border-default)',
+                  background: recordField === item.field ? 'var(--color-accent-muted)' : 'var(--control-bg)',
+                  borderColor: recordField === item.field ? 'var(--color-accent)' : 'var(--panel-border)',
                   color: recordField === item.field ? 'var(--color-accent-hover)' : 'var(--color-text-secondary)'
                 }"
                 :disabled="shortcutSaving"
@@ -214,7 +323,7 @@ function hideToTray(): void {
       </div>
 
       <!-- 数据 -->
-      <div class="rounded-xl border" style="background: var(--color-bg-elevated); border-color: var(--color-border-muted)">
+      <div class="glass-panel rounded-xl border" style="background: var(--panel-bg); border-color: var(--panel-border)">
         <h2 class="border-b px-4 py-2.5 text-xs font-semibold" style="border-color: var(--color-border-muted); color: var(--color-text-secondary)">
           数据与版本
         </h2>

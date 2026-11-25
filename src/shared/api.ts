@@ -1,5 +1,7 @@
 import type { SitePreviewAPI } from './sitePreview'
 import type { AppPreferences, PreferencesPatch } from './preferences'
+import type { BackgroundAPI } from './types'
+import type { SystemAPI } from './system'
 
 export interface WindowAPI {
   minimize: () => Promise<void>
@@ -37,6 +39,8 @@ export interface AppAPI {
   prefs: PreferencesAPI
   app: AppShellAPI
   shortcuts: ShortcutsAPI
+  background: BackgroundAPI
+  system: SystemAPI
   onToggleBoss: (callback: () => void) => () => void
   onToggleSearch: (callback: () => void) => () => void
 }
