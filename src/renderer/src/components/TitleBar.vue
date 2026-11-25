@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 
 const isMaximized = ref(false)
-const menus = ['File', 'Edit', 'Selection', 'View', 'Go', 'Run', 'Terminal', 'Help']
 
 onMounted(async () => {
   if (window.api?.window) {
@@ -31,23 +30,13 @@ function close(): void {
     class="flex h-10 shrink-0 items-center justify-between border-b border-(--color-border-muted) select-none"
     style="background: var(--shell-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); -webkit-app-region: drag"
   >
-    <div class="flex min-w-0 flex-1 items-center gap-1 pl-3" style="-webkit-app-region: no-drag">
-      <div class="mr-2 flex h-5 w-5 items-center justify-center rounded bg-(--color-accent) text-white">
+    <div class="flex min-w-0 flex-1 items-center gap-2 pl-3" style="-webkit-app-region: no-drag">
+      <div class="mr-1 flex h-5 w-5 items-center justify-center rounded bg-(--color-accent) text-white">
         <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
         </svg>
       </div>
-      <button v-for="menu in menus" :key="menu" class="rounded px-1.5 py-1 text-[11px] text-(--color-text-secondary) hover:bg-(--color-bg-overlay) hover:text-(--color-text-primary)">
-        {{ menu }}
-      </button>
-    </div>
-
-    <div class="pointer-events-none flex shrink-0 items-center gap-2 px-4 text-[11px] text-(--color-text-tertiary)">
-      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5 12 3l8.25 4.5v9L12 21l-8.25-4.5v-9Z" />
-        <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 7.5 8.25 4.5 8.25-4.5M12 12v9" />
-      </svg>
-      <span>format-duration.ts - Visual Studio Code</span>
+      <span class="truncate text-xs font-medium text-(--color-text-secondary)">摸鱼神器</span>
     </div>
 
     <div class="flex h-full shrink-0 items-center" style="-webkit-app-region: no-drag">
