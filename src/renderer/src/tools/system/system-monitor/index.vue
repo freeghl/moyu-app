@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useTabStore } from '../../../stores'
 import type {
   ProcessMetrics,
@@ -22,16 +22,12 @@ const loadingSnapshot = ref(true)
 const loadingMetrics = ref(false)
 const loadingProcesses = ref(false)
 const refreshingAll = ref(false)
-const autoRefresh = ref(true)
-const refreshInterval = ref(2)
 const processQuery = ref('')
 const processSortKey = ref<ProcessSortKey>('pcpu')
 const processSortDirection = ref<SortDirection>('desc')
 const cpuHistory = ref<number[]>([])
 const networkHistory = ref<Array<{ rx: number; tx: number }>>([])
 
-let metricsTimer: ReturnType<typeof setInterval> | null = null
-let processTimer: ReturnType<typeof setInterval> | null = null
 let disposed = false
 
 const apiAvailable = computed(() => Boolean(window.api?.system))
@@ -278,32 +274,12 @@ async function refreshAll(): Promise<void> {
   refreshingAll.value = false
 }
 
-function stopTimers(): void {
-  if (metricsTimer) clearInterval(metricsTimer)
-  if (processTimer) clearInterval(processTimer)
-  metricsTimer = null
-  processTimer = null
-}
-
-function startTimers(): void {
-  stopTimers()
-  if (!apiAvailable.value || !autoRefresh.value || !isActive.value || document.hidden) return
-  metricsTimer = setInterval(() => void refreshMetrics(), refreshInterval.value * 1000)
-  processTimer = setInterval(() => void refreshProcesses(), 6000)
-}
-
-watch([autoRefresh, refreshInterval, isActive], startTimers)
-
 onMounted(() => {
   void refreshAll()
-  startTimers()
-  document.addEventListener('visibilitychange', startTimers)
 })
 
 onBeforeUnmount(() => {
   disposed = true
-  stopTimers()
-  document.removeEventListener('visibilitychange', startTimers)
 })
 </script>
 
@@ -314,30 +290,9 @@ onBeforeUnmount(() => {
         <div class="monitor-title">
           <div class="eyebrow"><span class="live-dot"></span>本机系统监控</div>
           <h1>系统资源，一目了然。</h1>
-          <p>实时查看硬件配置、资源占用与进程性能。</p>
+          <p>按需查看硬件配置、资源占用与进程性能。</p>
         </div>
         <div class="monitor-actions">
-          <label class="refresh-control">
-            <span>自动刷新</span>
-            <button
-              class="switch"
-              type="button"
-              role="switch"
-              :aria-checked="autoRefresh"
-              :aria-label="autoRefresh ? '关闭自动刷新' : '开启自动刷新'"
-              @click="autoRefresh = !autoRefresh"
-            >
-              <span></span>
-            </button>
-          </label>
-          <label class="interval-control">
-            <span class="sr-only">刷新间隔</span>
-            <select v-model.number="refreshInterval" :disabled="!autoRefresh">
-              <option :value="1">1 秒</option>
-              <option :value="2">2 秒</option>
-              <option :value="5">5 秒</option>
-            </select>
-          </label>
           <button
             class="primary-action"
             type="button"
@@ -400,7 +355,7 @@ onBeforeUnmount(() => {
               <span class="section-index">01</span>
               <h2 id="resource-heading">资源占用</h2>
             </div>
-            <span class="section-status"><span class="live-dot"></span>{{ autoRefresh && isActive ? '实时采样中' : '自动刷新已暂停' }}</span>
+            <span class="section-status"><span class="live-dot"></span>手动刷新模式</span>
           </div>
 
           <div class="resource-grid">
@@ -433,7 +388,7 @@ onBeforeUnmount(() => {
                 </div>
               </div>
               <div class="trend-row">
-                <div class="trend-copy"><span>最近 {{ Math.max(2, cpuHistory.length) * refreshInterval }} 秒</span><strong :style="{ color: cpuTone }">{{ formatPercent(cpuLoad) }}</strong></div>
+                <div class="trend-copy"><span>最近 {{ cpuHistory.length }} 次采样</span><strong :style="{ color: cpuTone }">{{ formatPercent(cpuLoad) }}</strong></div>
                 <svg class="trend-chart" viewBox="0 0 320 58" preserveAspectRatio="none" aria-hidden="true">
                   <path d="M0 29H320" class="chart-grid-line" />
                   <polyline :points="cpuChartPoints" :style="{ stroke: cpuTone }" />
@@ -667,12 +622,6 @@ onBeforeUnmount(() => {
 .monitor-title h1 { margin: 12px 0 8px; font-size: clamp(26px, 3vw, 38px); font-weight: 650; letter-spacing: -0.045em; line-height: 1.12; }
 .monitor-title p { margin: 0; color: var(--p-muted); font-size: 14px; }
 .monitor-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-.refresh-control, .interval-control { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; color: var(--p-muted); font-size: 12px; }
-.switch { position: relative; width: 36px; height: 20px; padding: 0; border: 1px solid var(--p-line-strong); border-radius: 999px; background: #202838; cursor: pointer; transition: background 160ms ease, border-color 160ms ease; }
-.switch span { position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--p-muted); transition: transform 160ms ease, background 160ms ease; }
-.switch[aria-checked="true"] { background: rgba(90, 185, 252, 0.18); border-color: rgba(90, 185, 252, 0.5); }
-.switch[aria-checked="true"] span { transform: translateX(16px); background: var(--p-accent); }
-.interval-control select { min-height: 40px; padding: 0 28px 0 12px; border: 1px solid var(--p-line); border-radius: 999px; outline: none; background: var(--p-surface); color: var(--p-ink); font: inherit; cursor: pointer; }
 .primary-action, .secondary-action { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 8px; padding: 0 17px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer; transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease, color 150ms ease; }
 .primary-action { border: 1px solid var(--p-accent); background: var(--p-accent); color: #07121b; }
 .secondary-action { border: 1px solid var(--p-line-strong); background: transparent; color: var(--p-ink); }
