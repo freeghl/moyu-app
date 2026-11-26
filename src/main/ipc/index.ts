@@ -5,6 +5,7 @@ import { registerBackgroundIpc } from './backgroundIpc'
 import { registerSystemIpc } from './systemIpc'
 import { registerAiIpc } from './aiIpc'
 import { registerTimeCoachIpc } from './timeCoachIpc'
+import { registerHoverVideoIpc } from './hoverVideoIpc'
 
 export function registerAllIpc(): void {
   registerWindowIpc()
@@ -12,6 +13,7 @@ export function registerAllIpc(): void {
   registerPreferencesIpc()
   registerBackgroundIpc()
   registerSystemIpc()
+  registerHoverVideoIpc()
   registerAiIpc()
   registerTimeCoachIpc()
 }

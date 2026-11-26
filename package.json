@@ -10,7 +10,12 @@
     "postinstall": "electron-builder install-app-deps",
     "type-check": "vue-tsc --noEmit"
   },
-  "keywords": ["moyu", "browser", "disguise", "electron"],
+  "keywords": [
+    "moyu",
+    "browser",
+    "disguise",
+    "electron"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
@@ -29,6 +34,7 @@
     "vue-tsc": "^2.1.0"
   },
   "dependencies": {
+    "koffi": "^3.3.8",
     "pinia": "^2.2.0",
     "systeminformation": "^5.33.24",
     "vue": "^3.5.0"

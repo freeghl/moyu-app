@@ -85,6 +85,13 @@ const api: AppAPI = {
     clearHistory: (date) => ipcRenderer.invoke('time-coach:clear-history', date),
     onStatusChanged: (callback) => subscribe('time-coach:status-changed', callback)
   },
+  hoverVideo: {
+    openLogin: (source) => ipcRenderer.invoke('hover-video:open-login', source),
+    finishLogin: (source) => ipcRenderer.invoke('hover-video:finish-login', source),
+    captureHotspot: () => ipcRenderer.invoke('hover-video:capture-hotspot'),
+    removeHotspot: (id) => ipcRenderer.invoke('hover-video:remove-hotspot', id),
+    onState: (callback) => subscribe('hover-video:state', callback)
+  },
   onToggleBoss: (callback) => subscribe('moyu:toggle-boss', callback),
   onToggleSearch: (callback) => subscribe('global:toggle-search', callback)
 }

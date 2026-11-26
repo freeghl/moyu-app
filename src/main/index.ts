@@ -10,6 +10,7 @@ import { shortcutService } from './services/shortcutService'
 import { lifecycle } from './services/lifecycle'
 import { resourcePath } from './services/assetPath'
 import { activityTrackerService } from './services/time-coach/activityTrackerService'
+import { hoverVideoService } from './services/hoverVideoService'
 
 let preferences: AppPreferences
 let resizing: ReturnType<typeof setTimeout> | undefined
@@ -70,6 +71,7 @@ function saveWindowState(window: BrowserWindow, sync = false): void {
 function showWindow(): void {
   const window = windowService.getMainWindow()
   if (!window || window.isDestroyed()) return
+  hoverVideoService.hide()
   if (!window.isVisible()) window.show()
   window.focus()
   syncTray()
@@ -79,6 +81,7 @@ function hideWindow(): void {
   const window = windowService.getMainWindow()
   if (!window || window.isDestroyed()) return
   hideSitePreview(window)
+  hoverVideoService.hide()
   window.hide()
   syncTray()
 }
@@ -87,6 +90,7 @@ function toggleBoss(): void {
   const window = windowService.getMainWindow()
   if (!window || window.isDestroyed()) return
   hideSitePreview(window)
+  hoverVideoService.hide()
   if (!window.isVisible()) window.show()
   window.focus()
   window.webContents.send('moyu:toggle-boss')
@@ -107,6 +111,7 @@ function summon(): void {
   const window = windowService.getMainWindow()
   if (!window || window.isDestroyed()) return
   hideSitePreview(window)
+  hoverVideoService.hide()
   if (!window.isVisible()) window.show()
   window.focus()
   window.webContents.send('global:toggle-search')
@@ -136,6 +141,7 @@ function createWindow(state: WindowState): void {
   const mainWindow = new BrowserWindow(windowOptions(state))
 
   windowService.setMainWindow(mainWindow)
+  hoverVideoService.attach(mainWindow)
   setupWindowEvents(mainWindow)
   setupSitePreview(mainWindow)
   setupTimeCoachEvents(mainWindow)
@@ -194,6 +200,7 @@ if (!locked) {
     if (!shortcutResult.ok) console.warn('[moyu] 全局快捷键注册失败：', shortcutResult.error)
     preferenceStore.subscribe((next) => {
       preferences = next
+      hoverVideoService.applyPreferences(next.hoverVideo)
       syncTray()
     })
 
@@ -204,6 +211,7 @@ if (!locked) {
       summonKey: preferences.settings.summonKey
     })
 
+    hoverVideoService.applyPreferences(preferences.hoverVideo)
     createWindow(preferences.window)
 
     app.on('activate', () => {
@@ -222,6 +230,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   lifecycle.markQuitting()
   activityTrackerService.disposeSync()
+  hoverVideoService.dispose()
   shortcutService.dispose()
   destroyTray()
 })

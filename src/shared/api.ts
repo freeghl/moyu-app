@@ -12,6 +12,7 @@ import type {
   AiStreamChunk,
   AiTestResult
 } from './ai'
+import type { HoverVideoAPI } from './hoverVideo'
 
 export interface WindowAPI {
   minimize: () => Promise<void>
@@ -66,6 +67,7 @@ export interface AppAPI {
   system: SystemAPI
   ai: AiAPI
   timeCoach: TimeCoachAPI
+  hoverVideo: HoverVideoAPI
   onToggleBoss: (callback: () => void) => () => void
   onToggleSearch: (callback: () => void) => () => void
 }

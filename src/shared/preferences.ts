@@ -1,4 +1,5 @@
 import { CATEGORY_IDS } from './categories'
+import { HOVER_VIDEO_SOURCE_IDS, type HoverVideoHotspot, type HoverVideoPreferences, type HoverVideoSourceId } from './hoverVideo'
 import type { ToolCategory, WorkspaceItem } from './types'
 
 /** 全局快捷键与启动行为 */
@@ -43,6 +44,7 @@ export interface AppPreferences {
   favorites: string[]
   recentTools: string[]
   tools: Record<string, ToolState>
+  hoverVideo: HoverVideoPreferences
 }
 
 export interface PreferencesPatch {
@@ -52,6 +54,7 @@ export interface PreferencesPatch {
   favorites?: string[]
   recentTools?: string[]
   tools?: Record<string, ToolState>
+  hoverVideo?: Partial<HoverVideoPreferences>
 }
 
 const WORKSPACES: readonly WorkspaceItem[] = ['home', 'all', 'favorites', 'recent', 'settings']
@@ -79,7 +82,13 @@ export function createDefaultPreferences(): AppPreferences {
     },
     favorites: [],
     recentTools: [],
-    tools: {}
+    tools: {},
+    hoverVideo: {
+      enabled: false,
+      muted: true,
+      sources: [...HOVER_VIDEO_SOURCE_IDS],
+      hotspots: []
+    }
   }
 }
 
@@ -151,6 +160,44 @@ function readTools(value: unknown): Record<string, ToolState> {
   return tools
 }
 
+function readHoverVideo(value: unknown, fallback: HoverVideoPreferences): HoverVideoPreferences {
+  if (!isRecord(value)) return { ...fallback, hotspots: [] }
+
+  const hotspots: HoverVideoHotspot[] = []
+  if (Array.isArray(value.hotspots)) {
+    for (const item of value.hotspots) {
+      if (!isRecord(item) || typeof item.id !== 'string' || !item.id || item.id.length > 128) continue
+      if (hotspots.some((hotspot) => hotspot.id === item.id)) continue
+      hotspots.push({
+        id: item.id,
+        name: readText(item.name, '桌面热区', 64),
+        x: readNumber(item.x, 0, -20000, 20000),
+        y: readNumber(item.y, 0, -20000, 20000),
+        width: readNumber(item.width, 84, 24, 400),
+        height: readNumber(item.height, 84, 24, 400),
+        displayId: readNumber(item.displayId, 0, -100, 10000)
+      })
+      if (hotspots.length >= 100) break
+    }
+  }
+
+  const sources: HoverVideoSourceId[] = []
+  if (Array.isArray(value.sources)) {
+    for (const item of value.sources) {
+      if (typeof item !== 'string' || !HOVER_VIDEO_SOURCE_IDS.includes(item as HoverVideoSourceId)) continue
+      if (sources.includes(item as HoverVideoSourceId)) continue
+      sources.push(item as HoverVideoSourceId)
+    }
+  }
+
+  return {
+    enabled: readBoolean(value.enabled, fallback.enabled),
+    muted: readBoolean(value.muted, fallback.muted),
+    sources: sources.length ? sources : [...fallback.sources],
+    hotspots
+  }
+}
+
 /** 把磁盘上的任意内容收敛成合法的偏好结构，避免脏数据把应用卡死 */
 export function normalizePreferences(raw: unknown): AppPreferences {
   const defaults = createDefaultPreferences()
@@ -170,7 +217,8 @@ export function normalizePreferences(raw: unknown): AppPreferences {
     session: readSession(raw.session, defaults.session),
     favorites: readStringArray(raw.favorites, MAX_FILES),
     recentTools: readStringArray(raw.recentTools, 30),
-    tools: readTools(raw.tools)
+    tools: readTools(raw.tools),
+    hoverVideo: readHoverVideo(raw.hoverVideo, defaults.hoverVideo)
   }
 }
 
@@ -182,7 +230,8 @@ export function mergePreferences(base: AppPreferences, patch: PreferencesPatch):
     session: { ...base.session, ...patch.session },
     favorites: patch.favorites ?? base.favorites,
     recentTools: patch.recentTools ?? base.recentTools,
-    tools: { ...base.tools, ...patch.tools }
+    tools: { ...base.tools, ...patch.tools },
+    hoverVideo: { ...base.hoverVideo, ...patch.hoverVideo }
   }
 }
 
@@ -195,6 +244,9 @@ export function mergePatches(base: PreferencesPatch | undefined, next: Preferenc
     session: { ...base.session, ...next.session },
     favorites: next.favorites ?? base.favorites,
     recentTools: next.recentTools ?? base.recentTools,
-    tools: { ...base.tools, ...next.tools }
+    tools: { ...base.tools, ...next.tools },
+    hoverVideo: next.hoverVideo || base.hoverVideo
+      ? { ...base.hoverVideo, ...next.hoverVideo }
+      : undefined
   }
 }
