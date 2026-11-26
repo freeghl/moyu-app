@@ -67,8 +67,13 @@ export interface AiProfile {
   model: string
   hasApiKey: boolean
   maskedApiKey: string
+  /** 自定义认证请求头名（留空则使用协议默认：Authorization 或 x-api-key） */
+  authHeaderName?: string
+  /** 自定义认证前缀（如 Bearer；传空字符串表示不带前缀直接发送 Key） */
+  authHeaderPrefix?: string
+  /** 附加自定义请求头 */
+  customHeaders?: Record<string, string>
   temperature: number
-  maxTokens: number
   enabled: boolean
   updatedAt: number
 }
@@ -84,8 +89,10 @@ export interface AiProfileInput {
   apiKey?: string
   /** 是否显式清空已保存的 API Key */
   clearApiKey?: boolean
+  authHeaderName?: string
+  authHeaderPrefix?: string
+  customHeaders?: Record<string, string>
   temperature?: number
-  maxTokens?: number
   enabled?: boolean
 }
 
@@ -105,7 +112,6 @@ export interface AiChatRequest {
   profileId?: string
   messages: AiMessage[]
   temperature?: number
-  maxTokens?: number
 }
 
 export interface AiChatResponse {
@@ -126,4 +132,10 @@ export interface AiTestResult {
   latencyMs: number
   message: string
   replyPreview?: string
+}
+
+export interface AiModelListResult {
+  ok: boolean
+  models: string[]
+  message?: string
 }

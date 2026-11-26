@@ -57,6 +57,7 @@ const api: AppAPI = {
     deleteProfile: (id) => ipcRenderer.invoke('ai:delete-profile', id),
     setDefault: (id) => ipcRenderer.invoke('ai:set-default', id),
     testConnection: (input) => ipcRenderer.invoke('ai:test-connection', input),
+    listModels: (input) => ipcRenderer.invoke('ai:list-models', input),
     chat: (request) => ipcRenderer.invoke('ai:chat', request),
     chatStream: (request) => ipcRenderer.invoke('ai:chat-stream', request),
     abort: (requestId) => ipcRenderer.invoke('ai:abort', requestId),

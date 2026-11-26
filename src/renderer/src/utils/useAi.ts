@@ -6,7 +6,6 @@ import { useTabStore } from '../stores/tabStore'
 export interface AskAiOptions {
   profileId?: string
   temperature?: number
-  maxTokens?: number
 }
 
 /**
@@ -48,8 +47,7 @@ export function useAi() {
         requestId,
         profileId: options.profileId,
         messages,
-        temperature: options.temperature,
-        maxTokens: options.maxTokens
+        temperature: options.temperature
       })
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err)
@@ -97,8 +95,7 @@ export function useAi() {
           requestId,
           profileId: options.profileId,
           messages,
-          temperature: options.temperature,
-          maxTokens: options.maxTokens
+          temperature: options.temperature
         })
         .catch((err) => {
           cleanupStream()

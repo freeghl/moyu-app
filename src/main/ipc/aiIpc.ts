@@ -30,6 +30,11 @@ export function registerAiIpc(): void {
     return aiClientService.testConnection(input)
   })
 
+  ipcMain.handle('ai:list-models', (event, input: AiProfileInput) => {
+    if (!isTrustedSender(event)) throw new Error('来源不可信')
+    return aiClientService.listModels(input)
+  })
+
   ipcMain.handle('ai:chat', (event, request: AiChatRequest) => {
     if (!isTrustedSender(event)) throw new Error('来源不可信')
     return aiClientService.chat(request)

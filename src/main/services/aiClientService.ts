@@ -2,6 +2,7 @@ import type {
   AiChatRequest,
   AiChatResponse,
   AiMessage,
+  AiModelListResult,
   AiProfileInput,
   AiStreamChunk,
   AiTestResult
@@ -23,8 +24,38 @@ function assertProfileReady(profile: ResolvedAiProfile): void {
 }
 
 function buildEndpoint(baseUrl: string, path: string): string {
-  const normalized = baseUrl.replace(/\/+$/, '')
+  const normalized = baseUrl
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/(chat\/completions|completions|messages|models)$/i, '')
   return normalized.endsWith(path) ? normalized : `${normalized}${path}`
+}
+
+function buildHeaders(profile: ResolvedAiProfile, includeJsonContentType = true): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...(profile.customHeaders ?? {})
+  }
+  if (includeJsonContentType) {
+    headers['Content-Type'] = 'application/json'
+  }
+  if (profile.provider === 'anthropic' && !headers['anthropic-version']) {
+    headers['anthropic-version'] = '2023-06-01'
+  }
+
+  if (profile.apiKey) {
+    if (profile.authHeaderName) {
+      const prefix = profile.authHeaderPrefix ?? ''
+      headers[profile.authHeaderName] = prefix ? `${prefix} ${profile.apiKey}` : profile.apiKey
+    } else if (profile.provider === 'anthropic') {
+      headers['x-api-key'] = profile.apiKey
+    } else {
+      const prefix = profile.authHeaderPrefix === undefined ? 'Bearer' : profile.authHeaderPrefix
+      headers.Authorization = prefix ? `${prefix} ${profile.apiKey}` : profile.apiKey
+    }
+  }
+
+  return headers
 }
 
 function extractOpenAiContent(data: unknown): string {
@@ -80,7 +111,6 @@ async function requestCompletion(
   profile: ResolvedAiProfile,
   messages: AiMessage[],
   temperature: number,
-  maxTokens: number,
   signal: AbortSignal
 ): Promise<string> {
   assertProfileReady(profile)
@@ -90,14 +120,10 @@ async function requestCompletion(
     const response = await fetch(buildEndpoint(profile.baseUrl, '/messages'), {
       method: 'POST',
       signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': profile.apiKey,
-        'anthropic-version': '2023-06-01'
-      },
+      headers: buildHeaders(profile, true),
       body: JSON.stringify({
         model: profile.model,
-        max_tokens: maxTokens,
+        max_tokens: 8192,
         temperature,
         ...(payload.system ? { system: payload.system } : {}),
         messages: payload.messages
@@ -107,18 +133,14 @@ async function requestCompletion(
     return extractAnthropicContent(await response.json())
   }
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (profile.apiKey) headers.Authorization = `Bearer ${profile.apiKey}`
-
   const response = await fetch(buildEndpoint(profile.baseUrl, '/chat/completions'), {
     method: 'POST',
     signal,
-    headers,
+    headers: buildHeaders(profile, true),
     body: JSON.stringify({
       model: profile.model,
       messages,
       temperature,
-      max_tokens: maxTokens,
       stream: false
     })
   })
@@ -156,7 +178,140 @@ async function parseSseLines(
   }
 }
 
+function extractModelIdsFromPayload(payload: unknown): string[] {
+  const rawIds: string[] = []
+
+  const collectFromArray = (arr: unknown[]): void => {
+    for (const item of arr) {
+      if (typeof item === 'string' && item.trim()) {
+        rawIds.push(item.trim())
+        continue
+      }
+      if (item && typeof item === 'object' && !Array.isArray(item)) {
+        const obj = item as { id?: unknown; name?: unknown; model?: unknown }
+        const id =
+          typeof obj.id === 'string'
+            ? obj.id
+            : typeof obj.name === 'string'
+              ? obj.name
+              : typeof obj.model === 'string'
+                ? obj.model
+                : ''
+        if (id.trim()) rawIds.push(id.trim())
+      }
+    }
+  }
+
+  if (Array.isArray(payload)) {
+    collectFromArray(payload)
+  } else if (payload && typeof payload === 'object') {
+    const record = payload as Record<string, unknown>
+    if (Array.isArray(record.data)) {
+      collectFromArray(record.data)
+    } else if (record.data && typeof record.data === 'object' && !Array.isArray(record.data)) {
+      const nested = record.data as Record<string, unknown>
+      if (Array.isArray(nested.data)) collectFromArray(nested.data)
+      if (Array.isArray(nested.list)) collectFromArray(nested.list)
+      if (Array.isArray(nested.models)) collectFromArray(nested.models)
+      if (Array.isArray(nested.items)) collectFromArray(nested.items)
+    }
+    if (Array.isArray(record.models)) collectFromArray(record.models)
+    if (Array.isArray(record.list)) collectFromArray(record.list)
+    if (Array.isArray(record.items)) collectFromArray(record.items)
+  }
+
+  return Array.from(new Set(rawIds)).sort((a, b) => a.localeCompare(b))
+}
+
+function buildModelListEndpoints(profile: ResolvedAiProfile): string[] {
+  const clean = profile.baseUrl
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/(chat\/completions|completions|messages|models)$/i, '')
+
+  const endpoints = [`${clean}/models`]
+  if (!/\/v\d+(beta)?$/i.test(clean)) {
+    endpoints.push(`${clean}/v1/models`)
+  }
+  if (profile.provider === 'ollama') {
+    const ollamaRoot = clean.replace(/\/v1$/i, '')
+    endpoints.push(`${ollamaRoot}/api/tags`)
+  }
+  return Array.from(new Set(endpoints))
+}
+
 export const aiClientService = {
+  async listModels(input: AiProfileInput): Promise<AiModelListResult> {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 12000)
+
+    try {
+      const profile = await aiConfigStore.resolveForInput(input)
+      if (!profile.baseUrl) {
+        return { ok: false, models: [], message: '请先填写 Base URL' }
+      }
+      if (profile.provider !== 'ollama' && !profile.apiKey) {
+        return { ok: false, models: [], message: '请先填写 API Key' }
+      }
+
+      const endpoints = buildModelListEndpoints(profile)
+      const headers = buildHeaders(profile, false)
+      let lastError = ''
+
+      for (const url of endpoints) {
+        const response = await fetch(url, {
+          method: 'GET',
+          signal: controller.signal,
+          headers
+        })
+
+        if (!response.ok) {
+          lastError = `${await readErrorMessage(response)} (${url})`
+          continue
+        }
+
+        const text = await response.text().catch(() => '')
+        if (!text.trim()) {
+          lastError = `接口返回空响应 (${url})`
+          continue
+        }
+
+        let json: unknown
+        try {
+          json = JSON.parse(text)
+        } catch {
+          lastError = `接口返回的不是有效 JSON (${url})`
+          continue
+        }
+
+        const models = extractModelIdsFromPayload(json)
+        if (models.length > 0) {
+          return {
+            ok: true,
+            models,
+            message: `已获取 ${models.length} 个模型`
+          }
+        }
+        lastError = `接口返回中未解析到模型列表 (${url})`
+      }
+
+      return {
+        ok: false,
+        models: [],
+        message: lastError || '未获取到可用模型，请检查 Base URL 或手动填写模型名称'
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      return {
+        ok: false,
+        models: [],
+        message: msg.includes('aborted') ? '获取超时（12s），请检查网络或 Base URL' : msg
+      }
+    } finally {
+      clearTimeout(timer)
+    }
+  },
+
   async testConnection(input: AiProfileInput): Promise<AiTestResult> {
     const started = Date.now()
     const controller = new AbortController()
@@ -168,7 +323,6 @@ export const aiClientService = {
         profile,
         [{ role: 'user', content: '请回复 "OK" 两个字母用于连通性测试。' }],
         0,
-        16,
         controller.signal
       )
       return {
@@ -199,7 +353,6 @@ export const aiClientService = {
         profile,
         request.messages,
         request.temperature ?? profile.temperature,
-        request.maxTokens ?? profile.maxTokens,
         controller.signal
       )
       return { content, model: profile.model, profileId: profile.id }
@@ -216,21 +369,16 @@ export const aiClientService = {
       const profile = await aiConfigStore.resolveProfile(request.profileId)
       assertProfileReady(profile)
       const temperature = request.temperature ?? profile.temperature
-      const maxTokens = request.maxTokens ?? profile.maxTokens
 
       if (profile.provider === 'anthropic') {
         const payload = splitAnthropicMessages(request.messages)
         const response = await fetch(buildEndpoint(profile.baseUrl, '/messages'), {
           method: 'POST',
           signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': profile.apiKey,
-            'anthropic-version': '2023-06-01'
-          },
+          headers: buildHeaders(profile, true),
           body: JSON.stringify({
             model: profile.model,
-            max_tokens: maxTokens,
+            max_tokens: 8192,
             temperature,
             stream: true,
             ...(payload.system ? { system: payload.system } : {}),
@@ -240,53 +388,82 @@ export const aiClientService = {
         if (!response.ok) throw new Error(await readErrorMessage(response))
         if (!response.body) throw new Error('响应体为空')
 
+        const contentType = response.headers.get('content-type') ?? ''
+        if (contentType.includes('application/json') && !contentType.includes('text/event-stream')) {
+          const text = extractAnthropicContent(await response.json())
+          if (text) emit({ requestId: request.requestId, delta: text, done: false })
+          emit({ requestId: request.requestId, done: true })
+          return
+        }
+
+        let emitted = false
         await parseSseLines(response.body, (data) => {
           try {
             const parsed = JSON.parse(data) as { type?: string; delta?: { text?: string } }
             if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+              emitted = true
               emit({ requestId: request.requestId, delta: parsed.delta.text, done: false })
             }
           } catch {
             // 忽略非 JSON 心跳行
           }
         })
-        emit({ requestId: request.requestId, done: true })
+        emit({
+          requestId: request.requestId,
+          done: true,
+          ...(emitted ? {} : { error: '接口未返回任何内容，请检查模型名称或 Base URL' })
+        })
         return
       }
-
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (profile.apiKey) headers.Authorization = `Bearer ${profile.apiKey}`
 
       const response = await fetch(buildEndpoint(profile.baseUrl, '/chat/completions'), {
         method: 'POST',
         signal: controller.signal,
-        headers,
+        headers: buildHeaders(profile, true),
         body: JSON.stringify({
           model: profile.model,
           messages: request.messages,
           temperature,
-          max_tokens: maxTokens,
           stream: true
         })
       })
       if (!response.ok) throw new Error(await readErrorMessage(response))
       if (!response.body) throw new Error('响应体为空')
 
+      const contentType = response.headers.get('content-type') ?? ''
+      if (contentType.includes('application/json') && !contentType.includes('text/event-stream')) {
+        const text = extractOpenAiContent(await response.json())
+        if (text) emit({ requestId: request.requestId, delta: text, done: false })
+        emit({
+          requestId: request.requestId,
+          done: true,
+          ...(text ? {} : { error: '接口未返回任何内容，请检查模型名称或 Base URL' })
+        })
+        return
+      }
+
+      let emitted = false
       await parseSseLines(response.body, (data) => {
         if (data === '[DONE]') return
         try {
           const parsed = JSON.parse(data) as {
-            choices?: Array<{ delta?: { content?: string } }>
+            choices?: Array<{ delta?: { content?: string; reasoning_content?: string }; message?: { content?: string } }>
           }
-          const delta = parsed.choices?.[0]?.delta?.content
+          const choice = parsed.choices?.[0]
+          const delta = choice?.delta?.content ?? choice?.delta?.reasoning_content ?? choice?.message?.content
           if (typeof delta === 'string' && delta) {
+            emitted = true
             emit({ requestId: request.requestId, delta, done: false })
           }
         } catch {
           // 忽略非 JSON 心跳行
         }
       })
-      emit({ requestId: request.requestId, done: true })
+      emit({
+        requestId: request.requestId,
+        done: true,
+        ...(emitted ? {} : { error: '接口未返回任何流式内容，请检查 Base URL 或模型是否支持对话' })
+      })
     } catch (error) {
       const aborted = controller.signal.aborted
       emit({

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { AiConfigState, AiProfileInput, AiTestResult } from '@shared/ai'
+import type { AiConfigState, AiModelListResult, AiProfileInput, AiTestResult } from '@shared/ai'
 
 export const useAiStore = defineStore('ai', () => {
   const config = ref<AiConfigState>({ defaultProfileId: null, profiles: [] })
@@ -68,6 +68,13 @@ export const useAiStore = defineStore('ai', () => {
     return window.api.ai.testConnection(input)
   }
 
+  async function listModels(input: AiProfileInput): Promise<AiModelListResult> {
+    if (typeof window.api?.ai?.listModels !== 'function') {
+      return { ok: false, models: [], message: 'AI 模型列表接口未就绪，请重启应用窗口后重试' }
+    }
+    return window.api.ai.listModels(input)
+  }
+
   return {
     config,
     profiles,
@@ -82,6 +89,7 @@ export const useAiStore = defineStore('ai', () => {
     saveProfile,
     deleteProfile,
     setDefault,
-    testConnection
+    testConnection,
+    listModels
   }
 })

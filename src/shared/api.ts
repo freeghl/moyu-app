@@ -6,6 +6,7 @@ import type {
   AiChatRequest,
   AiChatResponse,
   AiConfigState,
+  AiModelListResult,
   AiProfileInput,
   AiStreamChunk,
   AiTestResult
@@ -47,6 +48,7 @@ export interface AiAPI {
   deleteProfile: (id: string) => Promise<AiConfigState>
   setDefault: (id: string | null) => Promise<AiConfigState>
   testConnection: (input: AiProfileInput) => Promise<AiTestResult>
+  listModels: (input: AiProfileInput) => Promise<AiModelListResult>
   chat: (request: AiChatRequest) => Promise<AiChatResponse>
   chatStream: (request: AiChatRequest) => Promise<void>
   abort: (requestId: string) => Promise<void>

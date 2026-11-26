@@ -17,8 +17,13 @@ const { askStream, stop, loading: chatLoading } = useAi()
 const query = ref('')
 const selectedId = ref<string | 'new'>('new')
 const showApiKey = ref(false)
+const showAdvancedAuth = ref(false)
 const saving = ref(false)
 const testing = ref(false)
+const fetchingModels = ref(false)
+const fetchedModels = ref<string[]>([])
+const modelFetchMsg = ref('')
+const modelFetchOk = ref(true)
 const saveNotice = ref('')
 const saveError = ref('')
 const testResult = ref<AiTestResult | null>(null)
@@ -26,6 +31,8 @@ const testResult = ref<AiTestResult | null>(null)
 const quickPrompt = ref('')
 const quickReply = ref('')
 const quickError = ref('')
+const quickStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle')
+const quickLatencyMs = ref(0)
 
 const form = reactive<{
   id?: string
@@ -35,8 +42,10 @@ const form = reactive<{
   model: string
   apiKey: string
   clearApiKey: boolean
+  authHeaderName: string
+  authHeaderPrefix: string
+  customHeaderRows: Array<{ key: string; value: string }>
   temperature: number
-  maxTokens: number
   enabled: boolean
 }>({
   name: 'DeepSeek',
@@ -45,8 +54,10 @@ const form = reactive<{
   model: 'deepseek-chat',
   apiKey: '',
   clearApiKey: false,
+  authHeaderName: '',
+  authHeaderPrefix: 'Bearer',
+  customHeaderRows: [],
   temperature: 0.7,
-  maxTokens: 2048,
   enabled: true
 })
 
@@ -75,6 +86,12 @@ function loadPreset(preset: AiProviderPreset): void {
   form.provider = preset.provider
   form.baseUrl = preset.baseUrl
   form.model = preset.defaultModel
+  form.authHeaderName = ''
+  form.authHeaderPrefix = preset.provider === 'anthropic' ? '' : 'Bearer'
+  form.customHeaderRows = []
+  showAdvancedAuth.value = preset.id === 'custom'
+  fetchedModels.value = []
+  modelFetchMsg.value = ''
   testResult.value = null
   saveError.value = ''
 }
@@ -85,7 +102,6 @@ function startCreate(): void {
   form.apiKey = ''
   form.clearApiKey = false
   form.temperature = 0.7
-  form.maxTokens = 2048
   form.enabled = true
   loadPreset(AI_PROVIDER_PRESETS[1])
 }
@@ -99,16 +115,36 @@ function selectProfile(profile: AiProfile): void {
   form.model = profile.model
   form.apiKey = ''
   form.clearApiKey = false
+  form.authHeaderName = profile.authHeaderName ?? ''
+  form.authHeaderPrefix = profile.authHeaderPrefix ?? (profile.provider === 'anthropic' ? '' : 'Bearer')
+  form.customHeaderRows = Object.entries(profile.customHeaders ?? {}).map(([key, value]) => ({ key, value }))
+  showAdvancedAuth.value = Boolean(profile.authHeaderName || form.customHeaderRows.length > 0)
   form.temperature = profile.temperature
-  form.maxTokens = profile.maxTokens
   form.enabled = profile.enabled
   showApiKey.value = false
+  fetchedModels.value = []
+  modelFetchMsg.value = ''
   testResult.value = null
   saveError.value = ''
   saveNotice.value = ''
 }
 
+function addCustomHeaderRow(): void {
+  form.customHeaderRows.push({ key: '', value: '' })
+}
+
+function removeCustomHeaderRow(index: number): void {
+  form.customHeaderRows.splice(index, 1)
+}
+
 function buildPayload(): AiProfileInput {
+  const customHeaders: Record<string, string> = {}
+  for (const row of form.customHeaderRows) {
+    const k = row.key.trim()
+    const v = row.value.trim()
+    if (k && v) customHeaders[k] = v
+  }
+
   return {
     id: form.id,
     name: form.name.trim(),
@@ -117,8 +153,10 @@ function buildPayload(): AiProfileInput {
     model: form.model.trim(),
     apiKey: form.apiKey.trim() || undefined,
     clearApiKey: form.clearApiKey,
+    authHeaderName: form.authHeaderName.trim() || undefined,
+    authHeaderPrefix: form.authHeaderPrefix.trim(),
+    customHeaders: Object.keys(customHeaders).length ? customHeaders : undefined,
     temperature: Number(form.temperature),
-    maxTokens: Number(form.maxTokens),
     enabled: form.enabled
   }
 }
@@ -172,6 +210,44 @@ async function handleTest(): Promise<void> {
   }
 }
 
+async function handleFetchModels(): Promise<void> {
+  modelFetchOk.value = false
+  modelFetchMsg.value = '正在请求模型列表…'
+  fetchingModels.value = true
+  try {
+    const payload = buildPayload()
+    if (!payload.baseUrl) {
+      modelFetchMsg.value = '请先填写 Base URL 再获取模型'
+      return
+    }
+    if (payload.provider !== 'ollama' && !payload.apiKey && !selectedProfile.value?.hasApiKey) {
+      modelFetchMsg.value = '请先填写 API Key 再获取模型'
+      return
+    }
+
+    const res = await aiStore.listModels(payload)
+    if (res.ok && res.models.length > 0) {
+      modelFetchOk.value = true
+      modelFetchMsg.value = res.message || `已获取 ${res.models.length} 个模型`
+      fetchedModels.value = res.models
+      if (!form.model.trim() || !res.models.includes(form.model.trim())) {
+        form.model = res.models[0]
+      }
+    } else if (res.ok) {
+      modelFetchOk.value = false
+      modelFetchMsg.value = res.message || '接口未返回任何模型，请手动填写模型名称'
+    } else {
+      modelFetchOk.value = false
+      modelFetchMsg.value = res.message || '获取模型列表失败，请检查 Base URL 或 API Key'
+    }
+  } catch (err) {
+    modelFetchOk.value = false
+    modelFetchMsg.value = err instanceof Error ? err.message : `获取失败: ${String(err)}`
+  } finally {
+    fetchingModels.value = false
+  }
+}
+
 async function handleSetDefault(): Promise<void> {
   if (!selectedProfile.value) return
   await aiStore.setDefault(selectedProfile.value.id)
@@ -188,10 +264,18 @@ async function handleDelete(): Promise<void> {
 }
 
 async function handleQuickChat(): Promise<void> {
+  if (!selectedProfile.value) return
   const prompt = quickPrompt.value.trim()
-  if (!prompt || !selectedProfile.value) return
+  if (!prompt) {
+    quickStatus.value = 'error'
+    quickError.value = '请先输入测试消息再发送'
+    return
+  }
+
   quickReply.value = ''
   quickError.value = ''
+  quickStatus.value = 'loading'
+  const started = Date.now()
   try {
     await askStream(
       [{ role: 'user', content: prompt }],
@@ -200,7 +284,11 @@ async function handleQuickChat(): Promise<void> {
       },
       { profileId: selectedProfile.value.id }
     )
+    quickLatencyMs.value = Date.now() - started
+    quickStatus.value = 'success'
   } catch (err) {
+    quickLatencyMs.value = Date.now() - started
+    quickStatus.value = 'error'
     quickError.value = err instanceof Error ? err.message : String(err)
   }
 }
@@ -399,16 +487,72 @@ onMounted(async () => {
               />
             </label>
 
-            <label class="block space-y-1.5">
-              <span class="text-xs font-medium" style="color: var(--color-text-secondary)">模型名称 (Model)</span>
-              <input
-                v-model="form.model"
-                type="text"
-                class="w-full rounded-md border px-3 py-2 font-mono text-xs outline-none focus:border-indigo-500"
-                style="background: var(--color-bg-base); border-color: var(--color-border-default); color: var(--color-text-primary)"
-                placeholder="gpt-4o-mini / deepseek-chat"
-              />
-            </label>
+            <div class="space-y-1.5">
+              <span class="block text-xs font-medium" style="color: var(--color-text-secondary)">模型名称 (Model)</span>
+              <div class="flex items-center gap-2">
+                <select
+                  v-if="fetchedModels.length > 0"
+                  v-model="form.model"
+                  class="min-w-0 flex-1 rounded-md border px-3 py-2 font-mono text-xs outline-none focus:border-indigo-500"
+                  style="background: var(--color-bg-base); border-color: var(--color-border-default); color: var(--color-text-primary)"
+                >
+                  <option v-if="form.model && !fetchedModels.includes(form.model)" :value="form.model">
+                    {{ form.model }}
+                  </option>
+                  <option v-for="m in fetchedModels" :key="m" :value="m">{{ m }}</option>
+                </select>
+                <input
+                  v-else
+                  v-model="form.model"
+                  type="text"
+                  class="min-w-0 flex-1 rounded-md border px-3 py-2 font-mono text-xs outline-none focus:border-indigo-500"
+                  style="background: var(--color-bg-base); border-color: var(--color-border-default); color: var(--color-text-primary)"
+                  placeholder="gpt-4o-mini / deepseek-chat"
+                />
+                <button
+                  type="button"
+                  :disabled="fetchingModels"
+                  class="shrink-0 cursor-pointer rounded-md border px-2.5 py-2 text-xs transition-colors hover:bg-white/[0.04] disabled:opacity-50"
+                  style="border-color: var(--color-border-default); color: var(--color-text-secondary)"
+                  @click="handleFetchModels"
+                >
+                  {{ fetchingModels ? '获取中…' : '获取模型' }}
+                </button>
+                <button
+                  v-if="fetchedModels.length > 0"
+                  type="button"
+                  class="shrink-0 cursor-pointer rounded-md border px-2 py-2 text-xs transition-colors hover:bg-white/[0.04]"
+                  style="border-color: var(--color-border-default); color: var(--color-text-tertiary)"
+                  title="切换为手动输入"
+                  @click="fetchedModels = []"
+                >
+                  手填
+                </button>
+              </div>
+              <div
+                v-if="modelFetchMsg"
+                class="rounded-md border px-2.5 py-1.5 text-[11px]"
+                :style="{
+                  borderColor: fetchingModels
+                    ? 'var(--color-border-default)'
+                    : modelFetchOk
+                      ? 'rgba(16, 185, 129, 0.35)'
+                      : 'rgba(239, 68, 68, 0.35)',
+                  background: fetchingModels
+                    ? 'var(--color-bg-base)'
+                    : modelFetchOk
+                      ? 'rgba(16, 185, 129, 0.08)'
+                      : 'rgba(239, 68, 68, 0.08)',
+                  color: fetchingModels
+                    ? 'var(--color-text-secondary)'
+                    : modelFetchOk
+                      ? 'var(--color-success)'
+                      : 'var(--color-error)'
+                }"
+              >
+                {{ fetchingModels ? '⏳ ' : modelFetchOk ? '✓ ' : '✕ ' }}{{ modelFetchMsg }}
+              </div>
+            </div>
           </div>
 
           <div class="space-y-1.5">
@@ -456,7 +600,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label class="block space-y-1.5">
               <div class="flex items-center justify-between text-xs">
                 <span class="font-medium" style="color: var(--color-text-secondary)">Temperature</span>
@@ -465,24 +609,95 @@ onMounted(async () => {
               <input v-model.number="form.temperature" type="range" min="0" max="2" step="0.1" class="w-full accent-indigo-500" />
             </label>
 
-            <label class="block space-y-1.5">
-              <span class="text-xs font-medium" style="color: var(--color-text-secondary)">Max Tokens</span>
-              <input
-                v-model.number="form.maxTokens"
-                type="number"
-                min="64"
-                max="128000"
-                step="128"
-                class="w-full rounded-md border px-3 py-1.5 font-mono text-xs outline-none focus:border-indigo-500"
-                style="background: var(--color-bg-base); border-color: var(--color-border-default); color: var(--color-text-primary)"
-              />
-            </label>
-
             <div class="flex items-end pb-1">
               <label class="flex cursor-pointer items-center gap-2 text-xs" style="color: var(--color-text-secondary)">
                 <input v-model="form.enabled" type="checkbox" class="h-3.5 w-3.5 accent-indigo-500" />
                 <span>启用此配置（供插件选用）</span>
               </label>
+            </div>
+          </div>
+
+          <!-- 自定义认证字段与附加请求头 -->
+          <div class="border-t pt-3" style="border-color: var(--color-border-muted)">
+            <button
+              type="button"
+              class="flex w-full cursor-pointer items-center justify-between text-xs font-medium transition-colors hover:opacity-90"
+              style="color: var(--color-text-secondary)"
+              @click="showAdvancedAuth = !showAdvancedAuth"
+            >
+              <span>自定义认证字段与请求头（可选）</span>
+              <span class="text-[11px]" style="color: var(--color-text-tertiary)">
+                {{ showAdvancedAuth ? '收起 ▲' : '展开 ▼' }}
+              </span>
+            </button>
+
+            <div v-if="showAdvancedAuth" class="mt-3 space-y-3 rounded-lg border p-3" style="border-color: var(--color-border-muted); background: var(--color-bg-base)">
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label class="block space-y-1">
+                  <span class="text-[11px] font-medium" style="color: var(--color-text-secondary)">认证请求头名称 (Auth Header)</span>
+                  <input
+                    v-model="form.authHeaderName"
+                    type="text"
+                    class="w-full rounded-md border px-2.5 py-1.5 font-mono text-xs outline-none focus:border-indigo-500"
+                    style="background: var(--color-bg-elevated); border-color: var(--color-border-default); color: var(--color-text-primary)"
+                    placeholder="留空默认 Authorization，如 api-key / X-API-Key"
+                  />
+                </label>
+
+                <label class="block space-y-1">
+                  <span class="text-[11px] font-medium" style="color: var(--color-text-secondary)">认证前缀 (Prefix)</span>
+                  <input
+                    v-model="form.authHeaderPrefix"
+                    type="text"
+                    class="w-full rounded-md border px-2.5 py-1.5 font-mono text-xs outline-none focus:border-indigo-500"
+                    style="background: var(--color-bg-elevated); border-color: var(--color-border-default); color: var(--color-text-primary)"
+                    placeholder="默认 Bearer，若直接传 Key 请清空"
+                  />
+                </label>
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-medium" style="color: var(--color-text-secondary)">附加自定义请求头 (Custom Headers)</span>
+                  <button
+                    type="button"
+                    class="cursor-pointer rounded border px-2 py-0.5 text-[11px] hover:bg-white/[0.04]"
+                    style="border-color: var(--color-border-default); color: var(--color-accent-hover)"
+                    @click="addCustomHeaderRow"
+                  >
+                    + 添加请求头
+                  </button>
+                </div>
+
+                <div v-for="(row, idx) in form.customHeaderRows" :key="idx" class="flex items-center gap-2">
+                  <input
+                    v-model="row.key"
+                    type="text"
+                    class="w-40 rounded-md border px-2.5 py-1 font-mono text-xs outline-none focus:border-indigo-500"
+                    style="background: var(--color-bg-elevated); border-color: var(--color-border-default); color: var(--color-text-primary)"
+                    placeholder="Header 名，如 X-Org-Id"
+                  />
+                  <input
+                    v-model="row.value"
+                    type="text"
+                    class="min-w-0 flex-1 rounded-md border px-2.5 py-1 font-mono text-xs outline-none focus:border-indigo-500"
+                    style="background: var(--color-bg-elevated); border-color: var(--color-border-default); color: var(--color-text-primary)"
+                    placeholder="Header 值"
+                  />
+                  <button
+                    type="button"
+                    class="cursor-pointer rounded border px-2 py-1 text-[11px] hover:bg-white/[0.04]"
+                    style="border-color: var(--color-border-default); color: var(--color-error)"
+                    @click="removeCustomHeaderRow(idx)"
+                  >
+                    移除
+                  </button>
+                </div>
+
+                <p v-if="!form.customHeaderRows.length" class="text-[11px]" style="color: var(--color-text-tertiary)">
+                  适用于需要额外鉴权字段（如 api-key、X-Auth-Token 或网关租户头）的自定义接口。
+                </p>
+              </div>
             </div>
           </div>
 
@@ -558,12 +773,48 @@ onMounted(async () => {
             </button>
           </div>
           <div
-            v-if="quickReply || quickError"
-            class="rounded-md border p-3 font-mono text-xs leading-5 whitespace-pre-wrap"
-            style="background: var(--color-bg-base); border-color: var(--color-border-muted)"
-            :style="{ color: quickError ? 'var(--color-error)' : 'var(--color-text-secondary)' }"
+            v-if="quickStatus !== 'idle'"
+            class="space-y-2 rounded-md border p-3"
+            style="background: var(--color-bg-base)"
+            :style="{
+              borderColor:
+                quickStatus === 'success'
+                  ? 'rgba(16, 185, 129, 0.35)'
+                  : quickStatus === 'error'
+                    ? 'rgba(239, 68, 68, 0.35)'
+                    : 'var(--color-border-muted)'
+            }"
           >
-            {{ quickError || quickReply }}
+            <div class="flex items-center justify-between text-[11px]">
+              <span
+                :style="{
+                  color:
+                    quickStatus === 'success'
+                      ? 'var(--color-success)'
+                      : quickStatus === 'error'
+                        ? 'var(--color-error)'
+                        : 'var(--color-text-secondary)'
+                }"
+              >
+                {{
+                  quickStatus === 'loading'
+                    ? '⏳ 正在请求模型响应…'
+                    : quickStatus === 'success'
+                      ? `✓ 对话成功 (${quickLatencyMs}ms)`
+                      : '✕ 请求失败'
+                }}
+              </span>
+              <span v-if="selectedProfile?.model" class="font-mono" style="color: var(--color-text-tertiary)">
+                {{ selectedProfile.model }}
+              </span>
+            </div>
+            <div
+              v-if="quickError || quickReply"
+              class="font-mono text-xs leading-5 whitespace-pre-wrap"
+              :style="{ color: quickError ? 'var(--color-error)' : 'var(--color-text-primary)' }"
+            >
+              {{ quickError || quickReply }}
+            </div>
           </div>
         </div>
 

@@ -21,8 +21,10 @@ interface StoredAiProfile {
   baseUrl: string
   model: string
   secret?: StoredSecret
+  authHeaderName?: string
+  authHeaderPrefix?: string
+  customHeaders?: Record<string, string>
   temperature: number
-  maxTokens: number
   enabled: boolean
   updatedAt: number
 }
@@ -39,8 +41,10 @@ export interface ResolvedAiProfile {
   baseUrl: string
   model: string
   apiKey: string
+  authHeaderName?: string
+  authHeaderPrefix?: string
+  customHeaders?: Record<string, string>
   temperature: number
-  maxTokens: number
   enabled: boolean
 }
 
@@ -53,6 +57,28 @@ function clampNumber(value: unknown, fallback: number, min: number, max: number)
 
 function normalizeUrl(raw: string): string {
   return raw.trim().replace(/\/+$/, '')
+}
+
+function normalizeHeaderName(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined
+  const trimmed = raw.trim().slice(0, 128)
+  return trimmed || undefined
+}
+
+function normalizeHeaderPrefix(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined
+  return raw.trim().slice(0, 64)
+}
+
+function normalizeCustomHeaders(raw: unknown): Record<string, string> | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
+  const result: Record<string, string> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    const k = key.trim().slice(0, 128)
+    const v = typeof value === 'string' ? value.trim().slice(0, 1024) : ''
+    if (k && v) result[k] = v
+  }
+  return Object.keys(result).length ? result : undefined
 }
 
 function maskSecret(secret: string): string {
@@ -95,8 +121,10 @@ function toPublicProfile(item: StoredAiProfile): AiProfile {
     model: item.model,
     hasApiKey: Boolean(plainKey),
     maskedApiKey: maskSecret(plainKey),
+    authHeaderName: item.authHeaderName,
+    authHeaderPrefix: item.authHeaderPrefix,
+    customHeaders: item.customHeaders,
     temperature: item.temperature,
-    maxTokens: item.maxTokens,
     enabled: item.enabled,
     updatedAt: item.updatedAt
   }
@@ -135,8 +163,10 @@ function normalizeStoredConfig(raw: unknown): StoredAiConfig {
         baseUrl: typeof item.baseUrl === 'string' ? normalizeUrl(item.baseUrl).slice(0, 512) : '',
         model: typeof item.model === 'string' ? item.model.trim().slice(0, 128) : '',
         secret,
+        authHeaderName: normalizeHeaderName(item.authHeaderName),
+        authHeaderPrefix: normalizeHeaderPrefix(item.authHeaderPrefix),
+        customHeaders: normalizeCustomHeaders(item.customHeaders),
         temperature: clampNumber(item.temperature, 0.7, 0, 2),
-        maxTokens: Math.round(clampNumber(item.maxTokens, 2048, 64, 128000)),
         enabled: typeof item.enabled === 'boolean' ? item.enabled : true,
         updatedAt: typeof item.updatedAt === 'number' && Number.isFinite(item.updatedAt) ? item.updatedAt : Date.now()
       })
@@ -181,8 +211,10 @@ class AiConfigStore {
         baseUrl: normalizeUrl(input.baseUrl).slice(0, 512),
         model: input.model.trim().slice(0, 128),
         secret: nextSecret,
+        authHeaderName: normalizeHeaderName(input.authHeaderName),
+        authHeaderPrefix: normalizeHeaderPrefix(input.authHeaderPrefix),
+        customHeaders: normalizeCustomHeaders(input.customHeaders),
         temperature: clampNumber(input.temperature, 0.7, 0, 2),
-        maxTokens: Math.round(clampNumber(input.maxTokens, 2048, 64, 128000)),
         enabled: input.enabled ?? existing?.enabled ?? true,
         updatedAt: Date.now()
       }
@@ -248,8 +280,10 @@ class AiConfigStore {
       baseUrl: normalizeUrl(input.baseUrl),
       model: input.model.trim(),
       apiKey,
+      authHeaderName: normalizeHeaderName(input.authHeaderName),
+      authHeaderPrefix: normalizeHeaderPrefix(input.authHeaderPrefix),
+      customHeaders: normalizeCustomHeaders(input.customHeaders),
       temperature: clampNumber(input.temperature, 0.7, 0, 2),
-      maxTokens: Math.round(clampNumber(input.maxTokens, 2048, 64, 128000)),
       enabled: input.enabled ?? true
     }
   }
@@ -275,8 +309,10 @@ class AiConfigStore {
       baseUrl: found.baseUrl,
       model: found.model,
       apiKey: decryptSecret(found.secret),
+      authHeaderName: found.authHeaderName,
+      authHeaderPrefix: found.authHeaderPrefix,
+      customHeaders: found.customHeaders,
       temperature: found.temperature,
-      maxTokens: found.maxTokens,
       enabled: found.enabled
     }
   }
