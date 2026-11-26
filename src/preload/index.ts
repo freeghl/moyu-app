@@ -51,6 +51,17 @@ const api: AppAPI = {
     getMetrics: () => ipcRenderer.invoke('system:getMetrics'),
     getProcesses: () => ipcRenderer.invoke('system:getProcesses')
   },
+  ai: {
+    getConfig: () => ipcRenderer.invoke('ai:get-config'),
+    saveProfile: (input) => ipcRenderer.invoke('ai:save-profile', input),
+    deleteProfile: (id) => ipcRenderer.invoke('ai:delete-profile', id),
+    setDefault: (id) => ipcRenderer.invoke('ai:set-default', id),
+    testConnection: (input) => ipcRenderer.invoke('ai:test-connection', input),
+    chat: (request) => ipcRenderer.invoke('ai:chat', request),
+    chatStream: (request) => ipcRenderer.invoke('ai:chat-stream', request),
+    abort: (requestId) => ipcRenderer.invoke('ai:abort', requestId),
+    onStreamChunk: (callback) => subscribe('ai:stream-chunk', callback)
+  },
   onToggleBoss: (callback) => subscribe('moyu:toggle-boss', callback),
   onToggleSearch: (callback) => subscribe('global:toggle-search', callback)
 }

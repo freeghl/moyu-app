@@ -18,6 +18,7 @@
 - ➕ **自定义站点**：支持添加、编辑和删除站点，列表自动持久化。
 - 👁 **悬停预览**：老板模式下悬停代码区左下角 `⋯` 预览站点，移开自动隐藏，也可钉住。
 - ⌨️ **老板键与快速隐藏**：`Alt + Q` 切换假代码界面，`Alt + H` 隐藏 / 显示窗口。
+- 🤖 **统一 AI 配置中心**：支持 OpenAI 兼容、Anthropic Claude、Ollama 本地模型，密钥由系统安全存储加密，所有插件与工具可直接共享调用。
 - 📦 **托盘与状态持久化**：支持收进托盘、恢复会话、窗口位置和工具状态。
 
 ---
@@ -118,6 +119,7 @@ src/renderer/src/tools/dev/json-formatter/
 import type { ToolManifest } from '@shared/types'
 
 export const manifest: ToolManifest = {
+    
   id: 'json-formatter',
   name: 'JSON 格式化',
   description: '快速格式化、验证、美化与压缩 JSON 数据',
@@ -141,6 +143,19 @@ const state = useToolState('json-formatter', { input: '', indent: 2 })
 // state.input / state.indent 的改动会自动落盘，重启后恢复
 ```
 
+工具如果需要调用全局配置的 AI 模型（支持流式输出与中断），可以直接引入 `useAi`：
+
+```typescript
+import { useAi } from '../../../utils/useAi'
+
+const { askStream, profiles, defaultProfile, isConfigured, stop, openConfig } = useAi()
+
+// 未配置时可调用 openConfig() 跳转至「AI 模型配置」
+await askStream([{ role: 'user', content: '你好' }], (delta) => {
+  output.value += delta
+})
+```
+
 ---
 
 ## 💾 数据存放位置
@@ -149,6 +164,7 @@ const state = useToolState('json-formatter', { input: '', indent: 2 })
 | :--- | :--- |
 | `<userData>/preferences.json` | 设置、窗口尺寸位置、标签会话、收藏、最近使用、各工具状态 |
 | `<userData>/sites.json` | 摸鱼浏览器的自定义站点列表 |
+| `<userData>/ai-config.json` | AI 模型配置列表（API Key 经 Electron `safeStorage` 加密存储） |
 
 `userData` 目录可以在「系统设置 → 数据与版本」里直接打开。文件损坏时会自动备份为 `.broken-<时间戳>.json` 并回退默认值，不会让应用卡在报错状态。
 

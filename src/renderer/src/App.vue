@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import AppLayout from './layouts/AppLayout.vue'
-import { useMoyuStore, useNavStore, usePrefsStore, useTabStore } from './stores'
+import { useAiStore, useMoyuStore, useNavStore, usePrefsStore, useTabStore } from './stores'
 
 const prefsStore = usePrefsStore()
+const aiStore = useAiStore()
 const tabStore = useTabStore()
 const navStore = useNavStore()
 const moyuStore = useMoyuStore()
@@ -15,7 +16,7 @@ function openMoyuBrowser(): void {
 }
 
 onMounted(async () => {
-  await prefsStore.init()
+  await Promise.all([prefsStore.init(), aiStore.init()])
   tabStore.restore()
   ready.value = true
 

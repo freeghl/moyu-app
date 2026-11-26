@@ -3,6 +3,7 @@ import { registerSitePreviewIpc } from './sitePreviewIpc'
 import { registerPreferencesIpc } from './preferencesIpc'
 import { registerBackgroundIpc } from './backgroundIpc'
 import { registerSystemIpc } from './systemIpc'
+import { registerAiIpc } from './aiIpc'
 
 export function registerAllIpc(): void {
   registerWindowIpc()
@@ -10,6 +11,7 @@ export function registerAllIpc(): void {
   registerPreferencesIpc()
   registerBackgroundIpc()
   registerSystemIpc()
+  registerAiIpc()
 }
 
 export { setupWindowEvents } from './windowIpc'

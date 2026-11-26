@@ -2,6 +2,14 @@ import type { SitePreviewAPI } from './sitePreview'
 import type { AppPreferences, PreferencesPatch } from './preferences'
 import type { BackgroundAPI } from './types'
 import type { SystemAPI } from './system'
+import type {
+  AiChatRequest,
+  AiChatResponse,
+  AiConfigState,
+  AiProfileInput,
+  AiStreamChunk,
+  AiTestResult
+} from './ai'
 
 export interface WindowAPI {
   minimize: () => Promise<void>
@@ -33,6 +41,18 @@ export interface ShortcutsAPI {
   apply: (bossKey: string, hideKey: string, summonKey: string) => Promise<ShortcutApplyResult>
 }
 
+export interface AiAPI {
+  getConfig: () => Promise<AiConfigState>
+  saveProfile: (input: AiProfileInput) => Promise<AiConfigState>
+  deleteProfile: (id: string) => Promise<AiConfigState>
+  setDefault: (id: string | null) => Promise<AiConfigState>
+  testConnection: (input: AiProfileInput) => Promise<AiTestResult>
+  chat: (request: AiChatRequest) => Promise<AiChatResponse>
+  chatStream: (request: AiChatRequest) => Promise<void>
+  abort: (requestId: string) => Promise<void>
+  onStreamChunk: (callback: (chunk: AiStreamChunk) => void) => () => void
+}
+
 export interface AppAPI {
   window: WindowAPI
   sitePreview: SitePreviewAPI
@@ -41,6 +61,7 @@ export interface AppAPI {
   shortcuts: ShortcutsAPI
   background: BackgroundAPI
   system: SystemAPI
+  ai: AiAPI
   onToggleBoss: (callback: () => void) => () => void
   onToggleSearch: (callback: () => void) => () => void
 }
