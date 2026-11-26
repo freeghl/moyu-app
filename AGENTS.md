@@ -35,3 +35,14 @@ resources/             # 应用及打包资源
 6. 优先复用已有文件和目录，禁止重复创建。
 7. 禁止随意在项目根目录创建业务文件。
 8. 未经用户允许，不得改变现有目录结构。
+9. 应用内所有需要 AI 能力的功能或工具，禁止自行新增模型配置、单独存储 API Key 或重复封装请求逻辑，必须统一复用全局 AI 配置中心。
+
+## 全局 AI 模型配置与调用规范
+
+- **共享类型定义**：`src/shared/ai.ts`（`AiMessage`、`AiChatRequest`、`AiChatResponse`、`AiStreamChunk`、`AiProfile` 等）。
+- **渲染进程调用（工具 / 组件）**：
+  - 优先使用 `src/renderer/src/utils/useAi.ts` 的 `useAi()`（提供 `ask`、`askStream`、`stop`、`openConfig`、`isConfigured`、`defaultProfile`、`profiles`、`loading`、`error`）。
+  - 需要读取或管理配置状态时使用 `src/renderer/src/stores/aiStore.ts` 的 `useAiStore()`（底层经 `window.api.ai` 与 `src/main/ipc/aiIpc.ts` 通信）。
+  - 未配置可用模型时，调用 `openConfig()`（即 `tabStore.openTool('ai-config')`）引导用户前往 `src/renderer/src/tools/ai/ai-config/` 进行配置。
+- **主进程调用（Main 进程服务）**：
+  - 直接复用 `src/main/services/aiClientService.ts` 的 `aiClientService`（`chat` / `chatStream` / `abort`），或通过 `src/main/services/aiConfigStore.ts` 的 `aiConfigStore` 获取配置。

@@ -3,12 +3,13 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import type { AppPreferences, WindowState } from '@shared/preferences'
 import { windowService } from './services/windowService'
-import { hideSitePreview, registerAllIpc, setupSitePreview, setupWindowEvents } from './ipc'
+import { hideSitePreview, registerAllIpc, setupSitePreview, setupTimeCoachEvents, setupWindowEvents } from './ipc'
 import { preferenceStore } from './services/preferenceStore'
 import { createTray, destroyTray, updateTray, type TrayHandlers } from './services/trayService'
 import { shortcutService } from './services/shortcutService'
 import { lifecycle } from './services/lifecycle'
 import { resourcePath } from './services/assetPath'
+import { activityTrackerService } from './services/time-coach/activityTrackerService'
 
 let preferences: AppPreferences
 let resizing: ReturnType<typeof setTimeout> | undefined
@@ -137,6 +138,7 @@ function createWindow(state: WindowState): void {
   windowService.setMainWindow(mainWindow)
   setupWindowEvents(mainWindow)
   setupSitePreview(mainWindow)
+  setupTimeCoachEvents(mainWindow)
 
   mainWindow.once('ready-to-show', () => {
     if (state.maximized) mainWindow.maximize()
@@ -186,6 +188,7 @@ if (!locked) {
     preferences = await preferenceStore.get()
 
     registerAllIpc()
+    await activityTrackerService.init()
     shortcutService.setHandlers({ toggleBoss, toggleHide, summon })
     const shortcutResult = shortcutService.apply(preferences.settings)
     if (!shortcutResult.ok) console.warn('[moyu] 全局快捷键注册失败：', shortcutResult.error)
@@ -218,6 +221,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   lifecycle.markQuitting()
+  activityTrackerService.disposeSync()
   shortcutService.dispose()
   destroyTray()
 })

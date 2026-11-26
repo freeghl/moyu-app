@@ -1,13 +1,36 @@
 <script setup lang="ts">
 import { useTabStore } from '../stores'
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { TimeCoachStatus } from '@shared/timeCoach'
+import { formatDuration } from '../tools/system/time-coach/constants'
 
 defineProps<{ disguise: boolean }>()
 
 const tabStore = useTabStore()
+const timeCoachStatus = ref<TimeCoachStatus | null>(null)
+let unsubscribeTimeCoach: (() => void) | null = null
 
 const currentToolName = computed(() => {
   return tabStore.activeTab?.name ?? null
+})
+
+function openTimeCoach(): void {
+  tabStore.openTool('time-coach')
+}
+
+onMounted(() => {
+  if (window.api?.timeCoach) {
+    void window.api.timeCoach.getStatus().then((st) => {
+      timeCoachStatus.value = st
+    })
+    unsubscribeTimeCoach = window.api.timeCoach.onStatusChanged((st) => {
+      timeCoachStatus.value = st
+    })
+  }
+})
+
+onBeforeUnmount(() => {
+  unsubscribeTimeCoach?.()
 })
 </script>
 
@@ -77,6 +100,25 @@ const currentToolName = computed(() => {
       </div>
 
       <div class="flex items-center gap-3 font-mono">
+        <button
+          v-if="timeCoachStatus && timeCoachStatus.state !== 'stopped'"
+          type="button"
+          class="flex items-center gap-1.5 rounded px-1.5 py-0.5 transition hover:bg-white/10"
+          :title="timeCoachStatus.breakReminderDue ? '连续专注较久，建议休息一下' : '点击打开个人时间账单'"
+          @click="openTimeCoach"
+        >
+          <span
+            class="h-1.5 w-1.5 rounded-full"
+            :style="{
+              background:
+                timeCoachStatus.state === 'active'
+                  ? 'var(--color-success)'
+                  : 'var(--color-warning)'
+            }"
+          />
+          <span>今日工作 {{ formatDuration(timeCoachStatus.todayWorkSec) }}</span>
+        </button>
+        <span v-if="timeCoachStatus && timeCoachStatus.state !== 'stopped'" class="text-zinc-700">|</span>
         <span>已打开标签: {{ tabStore.tabs.length }}</span>
         <span class="text-zinc-700">|</span>
         <span>v1.0.0</span>

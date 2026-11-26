@@ -2,6 +2,7 @@ import type { SitePreviewAPI } from './sitePreview'
 import type { AppPreferences, PreferencesPatch } from './preferences'
 import type { BackgroundAPI } from './types'
 import type { SystemAPI } from './system'
+import type { TimeCoachAPI } from './timeCoach'
 import type {
   AiChatRequest,
   AiChatResponse,
@@ -64,6 +65,7 @@ export interface AppAPI {
   background: BackgroundAPI
   system: SystemAPI
   ai: AiAPI
+  timeCoach: TimeCoachAPI
   onToggleBoss: (callback: () => void) => () => void
   onToggleSearch: (callback: () => void) => () => void
 }

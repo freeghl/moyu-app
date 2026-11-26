@@ -4,6 +4,7 @@ import { registerPreferencesIpc } from './preferencesIpc'
 import { registerBackgroundIpc } from './backgroundIpc'
 import { registerSystemIpc } from './systemIpc'
 import { registerAiIpc } from './aiIpc'
+import { registerTimeCoachIpc } from './timeCoachIpc'
 
 export function registerAllIpc(): void {
   registerWindowIpc()
@@ -12,7 +13,9 @@ export function registerAllIpc(): void {
   registerBackgroundIpc()
   registerSystemIpc()
   registerAiIpc()
+  registerTimeCoachIpc()
 }
 
 export { setupWindowEvents } from './windowIpc'
 export { setupSitePreview, hideSitePreview } from './sitePreviewIpc'
+export { setupTimeCoachEvents } from './timeCoachIpc'

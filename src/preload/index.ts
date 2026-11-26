@@ -64,6 +64,27 @@ const api: AppAPI = {
     abort: (requestId) => ipcRenderer.invoke('ai:abort', requestId),
     onStreamChunk: (callback) => subscribe('ai:stream-chunk', callback)
   },
+  timeCoach: {
+    getStatus: () => ipcRenderer.invoke('time-coach:get-status'),
+    start: () => ipcRenderer.invoke('time-coach:start'),
+    pause: () => ipcRenderer.invoke('time-coach:pause'),
+    resume: () => ipcRenderer.invoke('time-coach:resume'),
+    stop: () => ipcRenderer.invoke('time-coach:stop'),
+    dismissBreakReminder: () => ipcRenderer.invoke('time-coach:dismiss-break'),
+    getDailySummary: (date) => ipcRenderer.invoke('time-coach:get-daily-summary', date),
+    getTrends: (days) => ipcRenderer.invoke('time-coach:get-trends', days),
+    getSettings: () => ipcRenderer.invoke('time-coach:get-settings'),
+    updateSettings: (patch) => ipcRenderer.invoke('time-coach:update-settings', patch),
+    listRules: () => ipcRenderer.invoke('time-coach:list-rules'),
+    saveRule: (input) => ipcRenderer.invoke('time-coach:save-rule', input),
+    deleteRule: (id) => ipcRenderer.invoke('time-coach:delete-rule', id),
+    reclassify: (req) => ipcRenderer.invoke('time-coach:reclassify', req),
+    getDailyNote: (date) => ipcRenderer.invoke('time-coach:get-daily-note', date),
+    saveDailyNote: (note) => ipcRenderer.invoke('time-coach:save-daily-note', note),
+    buildAiDigest: (date, days) => ipcRenderer.invoke('time-coach:build-ai-digest', date, days),
+    clearHistory: (date) => ipcRenderer.invoke('time-coach:clear-history', date),
+    onStatusChanged: (callback) => subscribe('time-coach:status-changed', callback)
+  },
   onToggleBoss: (callback) => subscribe('moyu:toggle-boss', callback),
   onToggleSearch: (callback) => subscribe('global:toggle-search', callback)
 }
