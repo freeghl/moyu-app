@@ -49,7 +49,8 @@ const api: AppAPI = {
   system: {
     getSnapshot: () => ipcRenderer.invoke('system:getSnapshot'),
     getMetrics: () => ipcRenderer.invoke('system:getMetrics'),
-    getProcesses: () => ipcRenderer.invoke('system:getProcesses')
+    getProcesses: () => ipcRenderer.invoke('system:getProcesses'),
+    killProcess: (pid) => ipcRenderer.invoke('system:killProcess', pid)
   },
   ai: {
     getConfig: () => ipcRenderer.invoke('ai:get-config'),

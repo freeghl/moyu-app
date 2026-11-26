@@ -183,8 +183,15 @@ export interface ProcessSnapshot {
   processes: ProcessMetrics[]
 }
 
+export interface KillProcessResult {
+  pid: number
+  success: boolean
+  message?: string
+}
+
 export interface SystemAPI {
   getSnapshot: () => Promise<SystemSnapshot>
   getMetrics: () => Promise<SystemMetrics>
   getProcesses: () => Promise<ProcessSnapshot>
+  killProcess: (pid: number) => Promise<KillProcessResult>
 }

@@ -3,6 +3,7 @@ import { promisify } from 'node:util'
 import * as si from 'systeminformation'
 import type {
   DiskMetrics,
+  KillProcessResult,
   NetworkMetrics,
   ProcessSnapshot,
   SystemMetrics,
@@ -300,6 +301,33 @@ export const systemService = {
       blocked: result.blocked,
       sleeping: result.sleeping,
       processes
+    }
+  },
+
+  async killProcess(pid: number): Promise<KillProcessResult> {
+    if (!Number.isInteger(pid) || pid <= 0) {
+      return { pid, success: false, message: '无效的进程 PID' }
+    }
+    if (pid === process.pid) {
+      return { pid, success: false, message: '不能结束当前应用主进程' }
+    }
+
+    try {
+      process.kill(pid, 'SIGTERM')
+      return { pid, success: true }
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException)?.code
+      if (code === 'ESRCH') {
+        return { pid, success: false, message: '进程不存在或已退出' }
+      }
+      if (code === 'EPERM') {
+        return { pid, success: false, message: '权限不足，无法结束该进程' }
+      }
+      return {
+        pid,
+        success: false,
+        message: error instanceof Error ? error.message : '结束进程失败'
+      }
     }
   }
 }
