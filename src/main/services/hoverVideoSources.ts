@@ -22,6 +22,7 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
   let muted = true;
   let current = null;
   let moving = false;
+  let lastWheelAt = 0;
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -44,11 +45,12 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
     });
   }
 
-  async function move(advance) {
+  async function move(direction) {
     if (moving) return { playing: false };
     moving = true;
     try {
-      if (advance) document.querySelector('[data-e2e="feed-navigation-next"]')?.click();
+      if (direction < 0) document.querySelector('[data-e2e="feed-navigation-prev"]')?.click();
+      else if (direction > 0) document.querySelector('[data-e2e="feed-navigation-next"]')?.click();
       const deadline = Date.now() + 10000;
       while (Date.now() < deadline) {
         const next = findFeedVideo(current);
@@ -62,7 +64,7 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
           current = next;
           next.muted = muted;
           next.addEventListener('ended', () => {
-            if (active) void move(true);
+            if (active) void move(1);
           });
           previous?.pause();
           if (active) await startPlayback(next);
@@ -86,7 +88,7 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
     muted = Boolean(options.muted);
     if (current) current.muted = muted;
     if (!current || options.advance) {
-      const result = await move(Boolean(options.advance));
+      const result = await move(options.advance ? 1 : 0);
       if (!result.playing && current) {
         await startPlayback(current)
         return { playing: !current.paused };
@@ -98,9 +100,16 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
     return { playing: !current.paused };
   }
 
+  function wheel(direction) {
+    if (!active || moving || Date.now() - lastWheelAt < 650) return { playing: false };
+    lastWheelAt = Date.now();
+    return move(direction);
+  }
+
   window.__moyuHoverVideo = {
     play,
     pause,
+    wheel,
     setMuted(value) {
       muted = Boolean(value);
       if (current) current.muted = muted;
@@ -108,7 +117,7 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
   };
 
   const observer = new MutationObserver(() => {
-    if (active && !current && !moving) void move(false);
+    if (active && !current && !moving) void move(0);
   });
   observer.observe(document.body, { childList: true, subtree: true });
 })()`
@@ -119,6 +128,7 @@ function createDouyinPlayerScript(): string {
 
   const FEED_URL = 'https://www.douyin.com/jingxuan';
   const LAST_VIDEO_KEY = 'moyu-hover-last-douyin-video';
+  const VIDEO_HISTORY_KEY = 'moyu-hover-douyin-video-history';
   const style = document.createElement('style');
   style.textContent = 'html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#000!important;}body.moyu-hover-video-mode *:not(.moyu-hover-player):not(.moyu-hover-player *){visibility:hidden!important;}body.moyu-hover-video-mode .moyu-hover-player,body.moyu-hover-video-mode .moyu-hover-player *{visibility:visible!important;}.moyu-hover-player{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;transform:none!important;z-index:2147483647!important;background:#000!important;overflow:hidden!important;display:block!important;}.moyu-hover-player video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;transform:none!important;object-fit:cover!important;object-position:center!important;opacity:1!important;}';
   document.documentElement.append(style);
@@ -128,6 +138,7 @@ function createDouyinPlayerScript(): string {
   let current = null;
   let playerContainer = null;
   let moving = false;
+  let lastWheelAt = 0;
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const isVideoPage = () => /^\/video\/\d+/.test(location.pathname);
@@ -143,10 +154,15 @@ function createDouyinPlayerScript(): string {
 
   function findVideo() {
     const videos = [...document.querySelectorAll('video')]
-      .filter((video) => video.currentSrc && video.getBoundingClientRect().width > 0);
-    return videos.find((video) => video.currentSrc.startsWith('blob:') && video.readyState >= 2)
-      || videos.find((video) => video.readyState >= 2 && !video.currentSrc.includes('uuu_265'))
-      || videos.find((video) => video.readyState >= 2)
+      .filter((video) => video.currentSrc);
+    const visible = videos.filter((video) => {
+      const rect = video.getBoundingClientRect();
+      return rect.width > 0 && rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth;
+    });
+    const candidates = visible.length ? visible : videos;
+    return candidates.find((video) => video.currentSrc.startsWith('blob:') && video.readyState >= 2)
+      || candidates.find((video) => video.readyState >= 2 && !video.currentSrc.includes('uuu_265'))
+      || candidates.find((video) => video.readyState >= 2)
       || null;
   }
 
@@ -174,9 +190,13 @@ function createDouyinPlayerScript(): string {
     document.body.classList.add('moyu-hover-video-mode');
     video.muted = muted;
     video.playsInline = true;
+    const landscape = video.videoWidth > video.videoHeight;
+    video.style.setProperty('object-fit', 'cover', 'important');
+    video.style.setProperty('object-position', 'center', 'important');
+    video.style.setProperty('transform', landscape ? 'scale(0.92)' : 'none', 'important');
     if (!video.__moyuHoverEndedHandler) {
       video.__moyuHoverEndedHandler = () => {
-        if (active) void move(true);
+        if (active) void move(1);
       };
       video.addEventListener('ended', video.__moyuHoverEndedHandler);
     }
@@ -193,14 +213,40 @@ function createDouyinPlayerScript(): string {
     return [...new Set([...html.matchAll(/\/video\/(\d+)/g)].map((match) => match[1]))];
   }
 
-  async function move(advance) {
+  function videoHistory() {
+    try {
+      const value = JSON.parse(sessionStorage.getItem(VIDEO_HISTORY_KEY) || '[]');
+      return Array.isArray(value) ? value.filter((id) => typeof id === 'string' && /^\d+$/.test(id)) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function rememberVideo(id) {
+    const history = videoHistory();
+    if (history[history.length - 1] !== id) history.push(id);
+    try { sessionStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(history.slice(-20))); } catch {}
+  }
+
+  async function move(direction) {
     if (moving) return { playing: false };
     moving = true;
     try {
       if (isVideoPage()) {
-        if (!advance) {
+        const currentId = location.pathname.match(/^\/video\/(\d+)/)?.[1];
+        if (currentId) rememberVideo(currentId);
+        if (direction === 0) {
           const video = await waitForVideo();
           return video ? await attach(video) : { playing: false };
+        }
+        if (direction < 0) {
+          const history = videoHistory();
+          const index = history.lastIndexOf(currentId);
+          if (index <= 0) return { playing: false };
+          const previous = history[index - 1];
+          try { sessionStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(history.slice(0, index))); } catch {}
+          setTimeout(() => location.assign('https://www.douyin.com/video/' + previous), 0);
+          return { pendingNavigation: true, playing: false };
         }
         setTimeout(() => location.assign(FEED_URL), 0);
         return { pendingNavigation: true, playing: false };
@@ -214,6 +260,7 @@ function createDouyinPlayerScript(): string {
       const pool = candidates.length ? candidates : ids;
       const next = pool[Math.floor(Math.random() * pool.length)];
       try { sessionStorage.setItem(LAST_VIDEO_KEY, next); } catch {}
+      rememberVideo(next);
       setTimeout(() => location.assign('https://www.douyin.com/video/' + next), 0);
       return { pendingNavigation: true, playing: false };
     } finally {
@@ -230,14 +277,21 @@ function createDouyinPlayerScript(): string {
     active = true;
     muted = Boolean(options.muted);
     if (current) current.muted = muted;
-    if (!current || options.advance) return move(Boolean(options.advance));
+    if (!current || options.advance) return move(options.advance ? 1 : 0);
     await startPlayback(current);
     return { playing: !current.paused };
+  }
+
+  function wheel(direction) {
+    if (!active || moving || Date.now() - lastWheelAt < 650) return { playing: false };
+    lastWheelAt = Date.now();
+    return move(direction);
   }
 
   window.__moyuHoverVideo = {
     play,
     pause,
+    wheel,
     setMuted(value) {
       muted = Boolean(value);
       if (current) current.muted = muted;
@@ -245,7 +299,7 @@ function createDouyinPlayerScript(): string {
   };
 
   const observer = new MutationObserver(() => {
-    if (active && !current && !moving && isVideoPage()) void move(false);
+    if (active && !current && !moving && isVideoPage()) void move(0);
   });
   observer.observe(document.body, { childList: true, subtree: true });
 })()`
@@ -257,6 +311,7 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
 
     const FEED_URL = ${JSON.stringify(feedUrl)};
     const LINK_SELECTOR = ${JSON.stringify(linkSelector)};
+    const VIDEO_HISTORY_KEY = 'moyu-hover-video-history';
     const style = document.createElement('style');
     style.textContent = 'body.moyu-hover-video-mode *{visibility:hidden!important;}body.moyu-hover-video-mode .moyu-hover-player,body.moyu-hover-video-mode .moyu-hover-player *{visibility:visible!important;}.moyu-hover-player{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;margin:0!important;transform:none!important;z-index:2147483647!important;background:#000!important;overflow:hidden!important;}.moyu-hover-player video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;opacity:1!important;}';
     document.documentElement.append(style);
@@ -266,6 +321,7 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
     let current = null;
     let playerContainer = null;
     let moving = false;
+    let lastWheelAt = 0;
 
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const isVideoPage = () => /\/video\//.test(location.pathname);
@@ -307,10 +363,21 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
       document.body.classList.add('moyu-hover-video-mode');
       video.muted = muted;
       video.addEventListener('ended', () => {
-        if (active) location.assign(FEED_URL);
+        if (active) void move(1);
       });
       if (active) await startPlayback(video);
       return { playing: active ? !video.paused : true };
+    }
+
+    function canonicalVideoUrl(value) {
+      try {
+        const url = new URL(value, location.href);
+        url.search = '';
+        url.hash = '';
+        return url.origin + url.pathname.replace(/\/+$/, '');
+      } catch {
+        return '';
+      }
     }
 
     function feedLinks() {
@@ -323,17 +390,45 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
           if (url.origin === location.origin && /\/video\//.test(url.pathname)) links.push(url);
         } catch {}
       }
-      return [...new Map(links.map((url) => [url.href, url])).values()];
+      return [...new Map(links.map((url) => [canonicalVideoUrl(url.href), url])).values()];
     }
 
-    async function move(advance) {
+    function videoHistory() {
+      try {
+        const value = JSON.parse(sessionStorage.getItem(VIDEO_HISTORY_KEY) || '[]');
+        return Array.isArray(value)
+          ? value.filter((url) => typeof url === 'string').map((url) => canonicalVideoUrl(url)).filter(Boolean)
+          : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function rememberVideo(url) {
+      const history = videoHistory();
+      if (history[history.length - 1] !== url) history.push(url);
+      try { sessionStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(history.slice(-20))); } catch {}
+    }
+
+    async function move(direction) {
       if (moving) return { playing: false };
       moving = true;
       try {
         if (isVideoPage()) {
-          if (!advance) {
+          const currentUrl = canonicalVideoUrl(location.href);
+          rememberVideo(currentUrl);
+          if (direction === 0) {
             const video = await waitForVideo();
             return video ? await attach(video) : { playing: false };
+          }
+          if (direction < 0) {
+            const history = videoHistory();
+            const index = history.lastIndexOf(currentUrl);
+            if (index <= 0) return { playing: false };
+            const previous = history[index - 1];
+            try { sessionStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(history.slice(0, index))); } catch {}
+            setTimeout(() => location.assign(previous), 0);
+            return { pendingNavigation: true, playing: false };
           }
           setTimeout(() => location.assign(FEED_URL), 0);
           return { pendingNavigation: true, playing: false };
@@ -342,11 +437,13 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
         const links = feedLinks();
         if (!links.length) return { playing: false };
         let last = '';
-        try { last = sessionStorage.getItem('moyu-hover-last-video') || ''; } catch {}
-        const candidates = links.filter((url) => url.href !== last);
+        try { last = canonicalVideoUrl(sessionStorage.getItem('moyu-hover-last-video') || ''); } catch {}
+        const candidates = links.filter((url) => canonicalVideoUrl(url.href) !== last);
         const pool = candidates.length ? candidates : links;
         const next = pool[Math.floor(Math.random() * pool.length)];
-        try { sessionStorage.setItem('moyu-hover-last-video', next.href); } catch {}
+        const nextKey = canonicalVideoUrl(next.href);
+        try { sessionStorage.setItem('moyu-hover-last-video', nextKey); } catch {}
+        rememberVideo(nextKey);
         setTimeout(() => location.assign(next.href), 0);
         return { pendingNavigation: true, playing: false };
       } finally {
@@ -363,14 +460,21 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
       active = true;
       muted = Boolean(options.muted);
       if (current) current.muted = muted;
-      if (!current || options.advance) return move(Boolean(options.advance));
+      if (!current || options.advance) return move(options.advance ? 1 : 0);
       await startPlayback(current);
       return { playing: !current.paused };
+    }
+
+    function wheel(direction) {
+      if (!active || moving || Date.now() - lastWheelAt < 650) return { playing: false };
+      lastWheelAt = Date.now();
+      return move(direction);
     }
 
     window.__moyuHoverVideo = {
       play,
       pause,
+      wheel,
       setMuted(value) {
         muted = Boolean(value);
         if (current) current.muted = muted;
@@ -378,7 +482,7 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
     };
 
     const observer = new MutationObserver(() => {
-      if (active && !current && !moving && isVideoPage()) void move(false);
+      if (active && !current && !moving && isVideoPage()) void move(0);
     });
     observer.observe(document.body, { childList: true, subtree: true });
   })()`

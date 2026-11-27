@@ -1,6 +1,7 @@
 import { BrowserWindow, powerMonitor, screen, session } from 'electron'
 import type { Session, WebContents } from 'electron'
 import { randomInt, randomUUID } from 'node:crypto'
+import { join } from 'node:path'
 import {
   HOVER_VIDEO_HEIGHT,
   HOVER_VIDEO_HOTSPOT_SIZE,
@@ -294,6 +295,7 @@ class HoverVideoService {
     for (const overlay of this.overlays.values()) {
       if (overlay.isDestroyed()) continue
       void overlay.webContents.executeJavaScript('window.__moyuHoverVideo?.pause()').catch(() => undefined)
+      overlay.setIgnoreMouseEvents(true, { forward: true })
       overlay.hide()
     }
     this.activeOverlay = null
@@ -373,6 +375,15 @@ class HoverVideoService {
     }
 
     const cursor = screen.getCursorScreenPoint()
+    if (this.activeOverlay && !this.activeOverlay.isDestroyed()) {
+      const bounds = this.activeOverlay.getBounds()
+      if (cursor.x >= bounds.x && cursor.x <= bounds.x + bounds.width
+        && cursor.y >= bounds.y && cursor.y <= bounds.y + bounds.height) {
+        if (this.leaveTimer) clearTimeout(this.leaveTimer)
+        this.leaveTimer = undefined
+        return
+      }
+    }
     const hotspot = this.preferences.hotspots.find((item) => contains(item, cursor))
     const targeted = Boolean(hotspot && isCursorOnDesktop(cursor))
 
@@ -447,6 +458,7 @@ class HoverVideoService {
     for (const candidate of this.overlays.values()) {
       if (candidate === overlay || candidate.isDestroyed()) continue
       void candidate.webContents.executeJavaScript('window.__moyuHoverVideo?.pause()').catch(() => undefined)
+      candidate.setIgnoreMouseEvents(true, { forward: true })
       candidate.hide()
     }
     this.activeOverlay = overlay
@@ -469,7 +481,9 @@ class HoverVideoService {
     this.hasPlayed.add(sourceId)
     this.status = 'playing'
     this.notice = undefined
+    overlay.setIgnoreMouseEvents(false, { forward: true })
     overlay.showInactive()
+    overlay.focus()
     this.emitState()
   }
 
@@ -531,7 +545,7 @@ class HoverVideoService {
       hasShadow: true,
       alwaysOnTop: true,
       skipTaskbar: true,
-      focusable: false,
+      focusable: true,
       resizable: false,
       movable: false,
       minimizable: false,
@@ -544,11 +558,19 @@ class HoverVideoService {
         contextIsolation: true,
         nodeIntegration: false,
         backgroundThrottling: false,
-        autoplayPolicy: 'no-user-gesture-required'
+        autoplayPolicy: 'no-user-gesture-required',
+        preload: join(__dirname, '../preload/hoverVideo.js')
       }
     })
     this.overlays.set(sourceId, overlay)
     overlay.setIgnoreMouseEvents(true, { forward: true })
+    overlay.webContents.ipc.on('hover-video:wheel', (_event, direction) => {
+      if (direction !== -1 && direction !== 1) return
+      if (this.activeOverlay !== overlay || this.status !== 'playing') return
+      void overlay.webContents.executeJavaScript(
+        `window.__moyuHoverVideo?.wheel(${direction})`
+      ).catch(() => undefined)
+    })
     overlay.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
     overlay.webContents.on('will-frame-navigate', (event) => {
       if (!definition.allowsUrl(event.url)) event.preventDefault()
@@ -558,6 +580,14 @@ class HoverVideoService {
     })
     overlay.webContents.on('will-redirect', (event, url) => {
       if (!definition.allowsUrl(url)) event.preventDefault()
+    })
+    overlay.webContents.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => {
+      if (!isMainFrame || isInPlace || this.activeOverlay !== overlay) return
+      overlay.setIgnoreMouseEvents(true, { forward: true })
+      overlay.hide()
+      this.status = 'loading'
+      this.notice = `正在打开${definition.name}推荐视频…`
+      this.emitState()
     })
     overlay.webContents.on('did-navigate', () => {
       if (this.activeOverlay === overlay) void this.resumeAfterNavigation(overlay, sourceId)

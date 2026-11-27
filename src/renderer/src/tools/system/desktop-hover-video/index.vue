@@ -167,7 +167,7 @@ onBeforeUnmount(() => unsubscribe?.())
       </section>
 
       <section class="rounded-2xl border border-[var(--panel-border)] bg-[var(--color-accent-subtle)] px-5 py-4 text-xs leading-6 text-[var(--color-text-secondary)]">
-        视频直接从已启用平台的公开推荐流随机获取，无需导入文件。鼠标停留约 0.2 秒开始播放，离开后自动隐藏；移到另一个热区会随机切换平台和下一条视频，当前视频结束也会自动继续。
+        视频直接从已启用平台的公开推荐流随机获取，无需导入文件。鼠标停留约 0.2 秒开始播放，离开后自动隐藏；播放时滚动鼠标滚轮，向上切换上一条、向下切换下一条，当前视频结束也会自动继续。
       </section>
 
       <div v-if="errorMessage || serviceState?.notice" class="rounded-xl border border-[var(--panel-border)] bg-[var(--color-bg-elevated)] px-4 py-3 text-xs leading-5 text-[var(--color-text-secondary)]">

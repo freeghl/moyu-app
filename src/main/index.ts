@@ -15,6 +15,30 @@ import { hoverVideoService } from './services/hoverVideoService'
 let preferences: AppPreferences
 let resizing: ReturnType<typeof setTimeout> | undefined
 
+function allowsAppNavigation(value: string): boolean {
+  try {
+    return ['http:', 'https:', 'file:', 'about:', 'data:', 'blob:'].includes(new URL(value).protocol)
+  } catch {
+    return false
+  }
+}
+
+function guardExternalProtocols(): void {
+  app.on('web-contents-created', (_event, contents) => {
+    const preventExternalNavigation = (event: Electron.Event, url: string): void => {
+      if (allowsAppNavigation(url)) return
+      event.preventDefault()
+      console.warn('[moyu] 已拦截不支持的外部链接：', url)
+    }
+    contents.on('will-navigate', preventExternalNavigation)
+    contents.on('will-frame-navigate', (event) => {
+      if (allowsAppNavigation(event.url)) return
+      event.preventDefault()
+      console.warn('[moyu] 已拦截不支持的外部链接：', event.url)
+    })
+  })
+}
+
 function overlapsVisibleScreen(state: WindowState): boolean {
   if (state.x === undefined || state.y === undefined) return false
   return screen.getAllDisplays().some((display) => {
@@ -186,6 +210,7 @@ if (!locked) {
 
   app.whenReady().then(async () => {
     electronApp.setAppUserModelId('com.moyu.app')
+    guardExternalProtocols()
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
