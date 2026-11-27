@@ -43,6 +43,7 @@ class HoverVideoService {
   private preferences: HoverVideoPreferences = createDefaultPreferences().hoverVideo
   private mainWindow: BrowserWindow | null = null
   private overlays = new Map<HoverVideoSourceId, BrowserWindow>()
+  private prewarming = new Set<HoverVideoSourceId>()
   private loginWindows = new Map<HoverVideoSourceId, BrowserWindow>()
   private sessions = new Map<HoverVideoSourceId, Session>()
   private activeOverlay: BrowserWindow | null = null
@@ -123,6 +124,28 @@ class HoverVideoService {
     }
 
     this.syncPolling()
+    this.prewarmSources(next.sources)
+  }
+
+  private prewarmSources(sources: HoverVideoSourceId[]): void {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) return
+    for (const sourceId of sources) void this.prewarmSource(sourceId)
+  }
+
+  private async prewarmSource(sourceId: HoverVideoSourceId): Promise<void> {
+    if (this.prewarming.has(sourceId)) return
+    const existing = this.overlays.get(sourceId)
+    if (existing && !existing.isDestroyed()) return
+
+    this.prewarming.add(sourceId)
+    try {
+      const overlay = await this.ensureOverlay(sourceId)
+      await this.installPlayer(overlay, sourceId)
+    } catch {
+      return
+    } finally {
+      this.prewarming.delete(sourceId)
+    }
   }
 
   getState(): HoverVideoState {
@@ -404,7 +427,7 @@ class HoverVideoService {
       if (activationId !== this.activationId) return
       this.activateOverlay(overlay)
       this.positionOverlay(overlay, hotspot)
-      overlay.showInactive()
+      overlay.hide()
       await this.installPlayer(overlay, sourceId)
       if (activationId !== this.activationId) return
       const result = await overlay.webContents.executeJavaScript(
@@ -433,15 +456,20 @@ class HoverVideoService {
     if (this.activeOverlay !== overlay) return
     const name = HOVER_VIDEO_SOURCES[sourceId].name
     if (result?.pendingNavigation) {
+      overlay.hide()
       this.status = 'loading'
       this.notice = `正在打开${name}推荐视频…`
       this.emitState()
       return
     }
-    if (!result?.playing) throw new Error(`${name} 推荐视频尚未加载，请稍后重试。`)
+    if (!result?.playing) {
+      overlay.hide()
+      throw new Error(`${name} 推荐视频尚未加载，请稍后重试。`)
+    }
     this.hasPlayed.add(sourceId)
     this.status = 'playing'
     this.notice = undefined
+    overlay.showInactive()
     this.emitState()
   }
 

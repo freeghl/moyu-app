@@ -113,6 +113,144 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
   observer.observe(document.body, { childList: true, subtree: true });
 })()`
 
+function createDouyinPlayerScript(): string {
+  return String.raw`(() => {
+  if (window.__moyuHoverVideo) return;
+
+  const FEED_URL = 'https://www.douyin.com/jingxuan';
+  const LAST_VIDEO_KEY = 'moyu-hover-last-douyin-video';
+  const style = document.createElement('style');
+  style.textContent = 'html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#000!important;}body.moyu-hover-video-mode *:not(.moyu-hover-player):not(.moyu-hover-player *){visibility:hidden!important;}body.moyu-hover-video-mode .moyu-hover-player,body.moyu-hover-video-mode .moyu-hover-player *{visibility:visible!important;}.moyu-hover-player{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;transform:none!important;z-index:2147483647!important;background:#000!important;overflow:hidden!important;display:block!important;}.moyu-hover-player video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;transform:none!important;object-fit:cover!important;object-position:center!important;opacity:1!important;}';
+  document.documentElement.append(style);
+
+  let active = false;
+  let muted = true;
+  let current = null;
+  let playerContainer = null;
+  let moving = false;
+
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const isVideoPage = () => /^\/video\/\d+/.test(location.pathname);
+
+  async function startPlayback(video) {
+    try {
+      const playback = video.play();
+      playback?.catch(() => {});
+    } catch {}
+    const deadline = Date.now() + 4000;
+    while (video.paused && Date.now() < deadline) await delay(50);
+  }
+
+  function findVideo() {
+    const videos = [...document.querySelectorAll('video')]
+      .filter((video) => video.currentSrc && video.getBoundingClientRect().width > 0);
+    return videos.find((video) => video.currentSrc.startsWith('blob:') && video.readyState >= 2)
+      || videos.find((video) => video.readyState >= 2 && !video.currentSrc.includes('uuu_265'))
+      || videos.find((video) => video.readyState >= 2)
+      || null;
+  }
+
+  async function waitForVideo() {
+    const deadline = Date.now() + 12000;
+    while (Date.now() < deadline) {
+      const video = findVideo();
+      if (video) return video;
+      await delay(100);
+    }
+    return null;
+  }
+
+  async function attach(video) {
+    const previous = current;
+    const container = document.createElement('div');
+    if (video.parentElement) video.replaceWith(container);
+    container.append(video);
+    document.body.append(container);
+    previous?.pause();
+    playerContainer?.classList.remove('moyu-hover-player');
+    playerContainer = container;
+    current = video;
+    container.classList.add('moyu-hover-player');
+    document.body.classList.add('moyu-hover-video-mode');
+    video.muted = muted;
+    video.playsInline = true;
+    if (!video.__moyuHoverEndedHandler) {
+      video.__moyuHoverEndedHandler = () => {
+        if (active) void move(true);
+      };
+      video.addEventListener('ended', video.__moyuHoverEndedHandler);
+    }
+    if (active) await startPlayback(video);
+    return { playing: active ? !video.paused : true };
+  }
+
+  function feedVideoIds() {
+    const cardIds = [...document.querySelectorAll('[data-aweme-id]')]
+      .map((element) => element.getAttribute('data-aweme-id'))
+      .filter((id) => id && /^\d+$/.test(id));
+    if (cardIds.length) return [...new Set(cardIds)];
+    const html = document.documentElement?.innerHTML || '';
+    return [...new Set([...html.matchAll(/\/video\/(\d+)/g)].map((match) => match[1]))];
+  }
+
+  async function move(advance) {
+    if (moving) return { playing: false };
+    moving = true;
+    try {
+      if (isVideoPage()) {
+        if (!advance) {
+          const video = await waitForVideo();
+          return video ? await attach(video) : { playing: false };
+        }
+        setTimeout(() => location.assign(FEED_URL), 0);
+        return { pendingNavigation: true, playing: false };
+      }
+
+      const ids = feedVideoIds();
+      if (!ids.length) return { playing: false };
+      let last = '';
+      try { last = sessionStorage.getItem(LAST_VIDEO_KEY) || ''; } catch {}
+      const candidates = ids.filter((id) => id !== last);
+      const pool = candidates.length ? candidates : ids;
+      const next = pool[Math.floor(Math.random() * pool.length)];
+      try { sessionStorage.setItem(LAST_VIDEO_KEY, next); } catch {}
+      setTimeout(() => location.assign('https://www.douyin.com/video/' + next), 0);
+      return { pendingNavigation: true, playing: false };
+    } finally {
+      moving = false;
+    }
+  }
+
+  function pause() {
+    active = false;
+    current?.pause();
+  }
+
+  async function play(options) {
+    active = true;
+    muted = Boolean(options.muted);
+    if (current) current.muted = muted;
+    if (!current || options.advance) return move(Boolean(options.advance));
+    await startPlayback(current);
+    return { playing: !current.paused };
+  }
+
+  window.__moyuHoverVideo = {
+    play,
+    pause,
+    setMuted(value) {
+      muted = Boolean(value);
+      if (current) current.muted = muted;
+    }
+  };
+
+  const observer = new MutationObserver(() => {
+    if (active && !current && !moving && isVideoPage()) void move(false);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+})()`
+}
+
 function createRandomPlayerScript(feedUrl: string, linkSelector: string): string {
   return String.raw`(() => {
     if (window.__moyuHoverVideo) return;
@@ -274,7 +412,7 @@ export const HOVER_VIDEO_SOURCES: Record<HoverVideoSourceId, HoverVideoSourceDef
     loginUrl: 'https://www.douyin.com/',
     partition: 'persist:douyin-hover',
     loginCookieNames: ['sessionid', 'sessionid_ss', 'sid_tt'],
-    playerScript: createRandomPlayerScript('https://www.douyin.com/', '[href*="/video/"]'),
+    playerScript: createDouyinPlayerScript(),
     allowsUrl: (value) => allowsHost(value, 'douyin.com')
   },
   bilibili: {
