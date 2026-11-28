@@ -396,7 +396,7 @@ class ActivityRuleService {
     note: TimeCoachDailyNote
   ): string {
     const lines: string[] = []
-    lines.push(`# 个人时间账单脱敏摘要 (${summary.date})`)
+    lines.push(`# 工作统计脱敏摘要 (${summary.date})`)
     lines.push('')
     lines.push('## 1. 当日核心指标')
     lines.push(`- 有效工作总时长: ${formatDurationHm(summary.totalWorkSec)}`)

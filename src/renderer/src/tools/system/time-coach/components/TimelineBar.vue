@@ -86,6 +86,9 @@ function applyCategory(category: ActivityCategory): void {
       <div>
         <h3 class="text-xs font-semibold" style="color: var(--color-text-primary)">
           全天活动时间轴
+          <span v-if="visibleSegments.length" class="ml-1.5 font-normal text-[11px]" style="color: var(--color-text-tertiary)">
+            ({{ visibleSegments.length }} 段)
+          </span>
         </h3>
         <p class="text-[11px]" style="color: var(--color-text-tertiary)">
           点击任意色块可手动修正分类或设为隐私黑名单
@@ -121,6 +124,7 @@ function applyCategory(category: ActivityCategory): void {
           :key="seg.id"
           type="button"
           class="absolute top-0 bottom-0 transition-opacity hover:opacity-80 focus:outline-none"
+          :class="selected?.id === seg.id ? 'ring-2 ring-white/90 z-10' : ''"
           :style="segmentStyle(seg)"
           :title="`${formatClock(seg.startAt)}-${formatClock(seg.endAt)} ${segmentLabel(seg)} (${formatDuration(seg.durationSec)})`"
           @mouseenter="hovered = seg"

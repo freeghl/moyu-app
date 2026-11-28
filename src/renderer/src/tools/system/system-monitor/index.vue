@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useTabStore } from '../../../stores'
 import type {
   ProcessMetrics,
@@ -10,6 +10,8 @@ import type {
 
 type ProcessSortKey = 'name' | 'pcpu' | 'pmem' | 'memRss'
 type SortDirection = 'asc' | 'desc'
+
+const AUTO_REFRESH_INTERVAL = 3000
 
 const tabStore = useTabStore()
 const snapshot = ref<SystemSnapshot | null>(null)
@@ -22,6 +24,7 @@ const loadingSnapshot = ref(true)
 const loadingMetrics = ref(false)
 const loadingProcesses = ref(false)
 const refreshingAll = ref(false)
+const autoRefresh = ref(false)
 const processQuery = ref('')
 const processSortKey = ref<ProcessSortKey>('pcpu')
 const processSortDirection = ref<SortDirection>('desc')
@@ -32,6 +35,7 @@ const killingPid = ref<number | null>(null)
 const killFeedback = ref<{ type: 'success' | 'error'; text: string } | null>(null)
 
 let disposed = false
+let autoRefreshTimer: ReturnType<typeof setTimeout> | null = null
 let confirmTimer: ReturnType<typeof setTimeout> | null = null
 let feedbackTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -97,7 +101,7 @@ const filteredProcesses = computed(() => {
     return (a[processSortKey.value] - b[processSortKey.value]) * direction
   })
 })
-const visibleProcesses = computed(() => filteredProcesses.value.slice(0, 100))
+const visibleProcesses = computed(() => filteredProcesses.value)
 
 function formatBytes(bytes: number, decimals = 1): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
@@ -271,12 +275,59 @@ async function refreshAll(): Promise<void> {
   }
   if (refreshingAll.value) return
   refreshingAll.value = true
-  await Promise.all([
-    snapshot.value ? Promise.resolve() : loadSnapshot(),
-    refreshMetrics(),
-    refreshProcesses()
-  ])
-  refreshingAll.value = false
+  try {
+    await Promise.all([
+      snapshot.value ? Promise.resolve() : loadSnapshot(),
+      refreshMetrics(),
+      refreshProcesses()
+    ])
+  } finally {
+    refreshingAll.value = false
+    if (autoRefresh.value) scheduleAutoRefresh()
+  }
+}
+
+function clearAutoRefreshTimer(): void {
+  if (autoRefreshTimer) {
+    clearTimeout(autoRefreshTimer)
+    autoRefreshTimer = null
+  }
+}
+
+function scheduleAutoRefresh(): void {
+  clearAutoRefreshTimer()
+  if (disposed || !autoRefresh.value || !apiAvailable.value || !isActive.value || document.hidden) return
+  autoRefreshTimer = setTimeout(() => {
+    autoRefreshTimer = null
+    void runAutoRefreshTick()
+  }, AUTO_REFRESH_INTERVAL)
+}
+
+async function runAutoRefreshTick(): Promise<void> {
+  if (disposed || !autoRefresh.value || !apiAvailable.value || !isActive.value || document.hidden) return
+  if (!refreshingAll.value) {
+    await Promise.all([
+      snapshot.value ? Promise.resolve() : loadSnapshot(),
+      refreshMetrics(),
+      refreshProcesses()
+    ])
+  }
+  scheduleAutoRefresh()
+}
+
+function toggleAutoRefresh(): void {
+  if (!apiAvailable.value) return
+  autoRefresh.value = !autoRefresh.value
+}
+
+function handleVisibilityChange(): void {
+  if (document.hidden) {
+    clearAutoRefreshTimer()
+    return
+  }
+  if (autoRefresh.value && isActive.value) {
+    void runAutoRefreshTick()
+  }
 }
 
 function showKillFeedback(type: 'success' | 'error', text: string): void {
@@ -336,12 +387,31 @@ async function confirmKill(process: ProcessMetrics): Promise<void> {
   }
 }
 
+watch(autoRefresh, (enabled) => {
+  if (enabled) {
+    void runAutoRefreshTick()
+  } else {
+    clearAutoRefreshTimer()
+  }
+})
+
+watch(isActive, (active) => {
+  if (active && autoRefresh.value && !document.hidden) {
+    void runAutoRefreshTick()
+  } else if (!active) {
+    clearAutoRefreshTimer()
+  }
+})
+
 onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   void refreshAll()
 })
 
 onBeforeUnmount(() => {
   disposed = true
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  clearAutoRefreshTimer()
   if (confirmTimer) clearTimeout(confirmTimer)
   if (feedbackTimer) clearTimeout(feedbackTimer)
 })
@@ -358,6 +428,19 @@ onBeforeUnmount(() => {
         </div>
         <div class="monitor-actions">
           <button
+            class="auto-refresh-toggle"
+            :class="{ 'is-active': autoRefresh }"
+            type="button"
+            role="switch"
+            :aria-checked="autoRefresh"
+            :disabled="!apiAvailable"
+            @click="toggleAutoRefresh"
+          >
+            <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            <span>自动刷新</span>
+            <span v-if="autoRefresh" class="switch-interval">3s</span>
+          </button>
+          <button
             class="primary-action"
             type="button"
             :disabled="!apiAvailable || refreshingAll || loadingMetrics || loadingProcesses"
@@ -367,7 +450,7 @@ onBeforeUnmount(() => {
               <path d="M20 6v5h-5M4 18v-5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
               <path d="M6.1 8.2A7 7 0 0 1 18.8 10M5.2 14a7 7 0 0 0 12.7 1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
             </svg>
-            {{ refreshingAll ? '刷新系统数据' : '刷新系统数据' }}
+            {{ refreshingAll ? '正在刷新…' : '刷新系统数据' }}
           </button>
         </div>
       </header>
@@ -419,7 +502,10 @@ onBeforeUnmount(() => {
               <span class="section-index">01</span>
               <h2 id="resource-heading">资源占用</h2>
             </div>
-            <span class="section-status"><span class="live-dot"></span>手动刷新模式</span>
+            <span class="section-status" :class="{ 'is-live': autoRefresh }">
+              <span class="live-dot"></span>
+              {{ autoRefresh ? '自动刷新中 · 3s' : '手动刷新模式' }}
+            </span>
           </div>
 
           <div class="resource-grid">
@@ -538,7 +624,9 @@ onBeforeUnmount(() => {
         <section class="monitor-section" aria-labelledby="process-heading">
           <div class="section-heading">
             <div><span class="section-index">02</span><h2 id="process-heading">进程性能</h2></div>
-            <span class="section-meta">{{ processSnapshot?.total ?? 0 }} 个进程 · 显示前 {{ visibleProcesses.length }} 项</span>
+            <span class="section-meta">
+              {{ processQuery.trim() ? `匹配 ${visibleProcesses.length} / ${processSnapshot?.total ?? 0} 个进程` : `共 ${processSnapshot?.total ?? 0} 个进程` }}
+            </span>
           </div>
           <div class="process-panel">
             <div class="process-toolbar">
@@ -700,6 +788,15 @@ onBeforeUnmount(() => {
 .monitor-title h1 { margin: 12px 0 8px; font-size: clamp(26px, 3vw, 38px); font-weight: 650; letter-spacing: -0.045em; line-height: 1.12; }
 .monitor-title p { margin: 0; color: var(--p-muted); font-size: 15px; }
 .monitor-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.auto-refresh-toggle { display: inline-flex; min-height: 42px; align-items: center; gap: 9px; padding: 0 14px; border: 1px solid var(--p-line-strong); border-radius: 999px; background: var(--p-surface); color: var(--p-muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease; }
+.auto-refresh-toggle:hover:not(:disabled) { border-color: rgba(90, 185, 252, 0.45); color: var(--p-ink); }
+.auto-refresh-toggle:disabled { cursor: not-allowed; opacity: 0.45; }
+.auto-refresh-toggle.is-active { border-color: rgba(79, 209, 165, 0.45); background: rgba(79, 209, 165, 0.08); color: var(--p-ink); }
+.switch-track { position: relative; display: inline-flex; width: 32px; height: 18px; align-items: center; border-radius: 999px; background: #263042; transition: background-color 180ms ease; }
+.switch-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--p-muted); transform: translateX(3px); transition: transform 180ms ease, background-color 180ms ease; }
+.auto-refresh-toggle.is-active .switch-track { background: rgba(79, 209, 165, 0.35); }
+.auto-refresh-toggle.is-active .switch-thumb { background: var(--p-mint); transform: translateX(17px); }
+.switch-interval { padding: 2px 6px; border-radius: 999px; background: rgba(79, 209, 165, 0.14); color: var(--p-mint); font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; font-weight: 600; }
 .primary-action, .secondary-action { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 8px; padding: 0 17px; border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer; transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease, color 150ms ease; }
 .primary-action { border: 1px solid var(--p-accent); background: var(--p-accent); color: #07121b; }
 .secondary-action { border: 1px solid var(--p-line-strong); background: transparent; color: var(--p-ink); }
@@ -720,7 +817,9 @@ onBeforeUnmount(() => {
 .section-index { color: var(--p-accent); font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; }
 .section-heading h2 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -0.02em; }
 .section-status, .section-meta { display: inline-flex; align-items: center; gap: 7px; color: var(--p-muted); font-size: 12px; }
-.section-status .live-dot { width: 5px; height: 5px; box-shadow: none; }
+.section-status .live-dot { width: 5px; height: 5px; box-shadow: none; background: var(--p-faint); transition: background-color 180ms ease, box-shadow 180ms ease; }
+.section-status.is-live { color: var(--p-mint); }
+.section-status.is-live .live-dot { background: var(--p-mint); box-shadow: 0 0 0 4px rgba(79, 209, 165, 0.14); }
 .resource-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; }
 .metric-card { min-width: 0; padding: 19px; border: 1px solid var(--p-line); border-radius: 14px; background: var(--p-surface); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025); }
 .metric-card--cpu { grid-column: span 6; }
@@ -814,9 +913,13 @@ onBeforeUnmount(() => {
 .process-feedback--error { background: rgba(251, 113, 133, 0.08); color: #fda4af; }
 .process-feedback button { padding: 3px 10px; border: 1px solid currentColor; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 11px; cursor: pointer; opacity: 0.85; }
 .process-feedback button:hover { opacity: 1; }
-.process-table-wrap { overflow-x: auto; }
+.process-table-wrap { max-height: 460px; overflow: auto; scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.24) transparent; }
+.process-table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+.process-table-wrap::-webkit-scrollbar-track { background: transparent; }
+.process-table-wrap::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(148, 163, 184, 0.22); }
+.process-table-wrap::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.36); }
 .process-table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 13px; }
-.process-table th { padding: 0; border-bottom: 1px solid var(--p-line); background: rgba(9, 13, 20, 0.42); color: var(--p-faint); font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; }
+.process-table th { position: sticky; top: 0; z-index: 2; padding: 0; border-bottom: 1px solid var(--p-line); background: #101521; color: var(--p-faint); font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; }
 .process-table th:first-child { padding-left: 16px; }
 .process-table th.th-action, .process-table td.td-action { padding-right: 16px; text-align: right; }
 .process-table th button { display: inline-flex; min-height: 40px; align-items: center; gap: 7px; padding: 0 12px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
@@ -904,6 +1007,7 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
   .hardware-card--wide { grid-column: span 1; }
   .process-toolbar { align-items: stretch; flex-direction: column; gap: 10px; }
   .process-legend { justify-content: flex-end; }
+  .process-table-wrap { max-height: 380px; }
   .monitor-footer { align-items: flex-start; flex-direction: column; gap: 7px; }
   .state-card { align-items: flex-start; flex-direction: column; }
   .loading-grid { grid-template-columns: 1fr; }

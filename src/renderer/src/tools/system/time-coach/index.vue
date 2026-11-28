@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { ActivityCategory, DailyTimeSummary, TimeCoachStatus } from '@shared/timeCoach'
+import type { ActivityCategory, DailyTimeSummary, TimeCoachStatus, TrendPoint } from '@shared/timeCoach'
 import {
   CATEGORY_LIST,
   CATEGORY_META,
@@ -23,11 +23,38 @@ const status = ref<TimeCoachStatus | null>(null)
 const summary = ref<DailyTimeSummary | null>(null)
 const loading = ref(false)
 const actionError = ref('')
+const editingAppKey = ref<string | null>(null)
+const editingAppSaveRule = ref(true)
+const recentActiveDates = ref<TrendPoint[]>([])
 let unsubscribeStatus: (() => void) | null = null
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 const apiAvailable = computed(() => Boolean(window.api?.timeCoach))
 const isToday = computed(() => selectedDate.value === formatLocalDate())
+
+function dateDaysAgo(daysAgo: number): string {
+  const now = new Date()
+  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo)
+  return formatLocalDate(target.getTime())
+}
+
+const datePresets = computed(() => [
+  { label: '今天', date: dateDaysAgo(0) },
+  { label: '昨天', date: dateDaysAgo(1) },
+  { label: '前天', date: dateDaysAgo(2) }
+])
+
+function shiftDate(deltaDays: number): void {
+  const [y, m, d] = selectedDate.value.split('-').map(Number)
+  const next = new Date(y, m - 1, d + deltaDays)
+  const formatted = formatLocalDate(next.getTime())
+  const today = formatLocalDate()
+  selectedDate.value = formatted > today ? today : formatted
+}
+
+function goToday(): void {
+  selectedDate.value = formatLocalDate()
+}
 
 const categoryBreakdown = computed(() => {
   if (!summary.value) return []
@@ -46,12 +73,16 @@ async function loadAll(): Promise<void> {
   if (!window.api?.timeCoach) return
   loading.value = true
   try {
-    const [st, sum] = await Promise.all([
+    const [st, sum, trends] = await Promise.all([
       window.api.timeCoach.getStatus(),
-      window.api.timeCoach.getDailySummary(selectedDate.value)
+      window.api.timeCoach.getDailySummary(selectedDate.value),
+      window.api.timeCoach.getTrends(30)
     ])
     status.value = st
     summary.value = sum
+    recentActiveDates.value = trends
+      .filter((p) => p.totalWorkSec > 0 || p.leisureSec > 0)
+      .reverse()
   } finally {
     loading.value = false
   }
@@ -59,7 +90,7 @@ async function loadAll(): Promise<void> {
 
 async function handleStart(): Promise<void> {
   if (!window.api?.timeCoach) {
-    actionError.value = '时间账单后台接口未就绪，请重启应用窗口或重新启动 dev 服务后重试'
+    actionError.value = '工作统计后台接口未就绪，请重启应用窗口或重新启动 dev 服务后重试'
     return
   }
   actionError.value = ''
@@ -123,6 +154,22 @@ async function handleReclassify(payload: {
   })
 }
 
+async function handleReclassifyApp(appName: string, category: ActivityCategory): Promise<void> {
+  if (!window.api?.timeCoach) return
+  summary.value = await window.api.timeCoach.reclassify({
+    date: selectedDate.value,
+    appName,
+    category,
+    createRule: editingAppSaveRule.value
+  })
+  editingAppKey.value = null
+}
+
+function handleSelectDate(date: string): void {
+  selectedDate.value = date
+  activeTab.value = 'today'
+}
+
 watch(selectedDate, () => {
   void loadAll()
 })
@@ -162,7 +209,7 @@ onBeforeUnmount(() => {
       <div class="space-y-1">
         <div class="flex flex-wrap items-center gap-2.5">
           <h2 class="text-base font-semibold" style="color: var(--color-text-primary)">
-            个人时间账单 & AI 精力教练
+            工作统计
           </h2>
           <span
             v-if="status"
@@ -210,12 +257,16 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <input
-          v-model="selectedDate"
-          type="date"
-          class="rounded-lg border px-2.5 py-1.5 text-xs outline-none"
-          style="background: var(--color-bg-base); border-color: var(--color-border-default); color: var(--color-text-primary)"
-        />
+        <button
+          type="button"
+          :disabled="loading"
+          class="rounded-lg border px-2.5 py-1.5 text-xs transition hover:bg-white/5 disabled:opacity-50"
+          style="border-color: var(--color-border-default); color: var(--color-text-secondary); background: var(--color-bg-base)"
+          title="立即刷新"
+          @click="loadAll"
+        >
+          {{ loading ? '刷新中...' : '刷新' }}
+        </button>
 
         <button
           v-if="!status || status.state === 'stopped'"
@@ -262,7 +313,7 @@ onBeforeUnmount(() => {
       v-if="!apiAvailable || actionError"
       class="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-xs text-rose-300"
     >
-      {{ actionError || '时间账单后台接口（window.api.timeCoach）未就绪，请完全重启应用或重新运行 npm run dev。' }}
+      {{ actionError || '工作统计后台接口（window.api.timeCoach）未就绪，请完全重启应用或重新运行 npm run dev。' }}
     </div>
 
     <!-- 温和防过劳提醒 -->
@@ -286,7 +337,7 @@ onBeforeUnmount(() => {
     <nav class="flex items-center gap-1.5 border-b pb-2" style="border-color: var(--color-border-muted)">
       <button
         v-for="tab in [
-          { id: 'today', label: '今日概览' },
+          { id: 'today', label: '每日概览' },
           { id: 'trends', label: '历史趋势' },
           { id: 'ai', label: 'AI 精力教练 & 日报' },
           { id: 'rules', label: '规则与隐私设置' }
@@ -305,8 +356,106 @@ onBeforeUnmount(() => {
       </button>
     </nav>
 
-    <!-- 今日概览 -->
+    <!-- 每日概览 -->
     <div v-show="activeTab === 'today'" class="space-y-4">
+      <!-- 日期筛选栏 -->
+      <div
+        class="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border px-3.5 py-2.5"
+        style="background: var(--color-bg-elevated); border-color: var(--color-border-muted)"
+      >
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-medium" style="color: var(--color-text-secondary)">日期筛选</span>
+
+          <div class="flex items-center gap-1">
+            <button
+              v-for="preset in datePresets"
+              :key="preset.date"
+              type="button"
+              class="rounded-md px-2.5 py-1 text-xs transition"
+              :style="
+                selectedDate === preset.date
+                  ? 'background: var(--color-accent); color: #fff'
+                  : 'background: var(--color-bg-base); color: var(--color-text-secondary)'
+              "
+              @click="selectedDate = preset.date"
+            >
+              {{ preset.label }}
+            </button>
+          </div>
+
+          <div
+            class="flex items-center rounded-lg border overflow-hidden"
+            style="background: var(--color-bg-base); border-color: var(--color-border-default)"
+          >
+            <button
+              type="button"
+              class="px-2 py-1 text-xs transition hover:bg-white/5"
+              style="color: var(--color-text-secondary)"
+              title="前一天"
+              @click="shiftDate(-1)"
+            >
+              ‹
+            </button>
+            <input
+              v-model="selectedDate"
+              type="date"
+              :max="formatLocalDate()"
+              class="bg-transparent px-1.5 py-1 text-xs outline-none"
+              style="color: var(--color-text-primary)"
+            />
+            <button
+              type="button"
+              :disabled="isToday"
+              class="px-2 py-1 text-xs transition hover:bg-white/5 disabled:opacity-35"
+              style="color: var(--color-text-secondary)"
+              title="后一天"
+              @click="shiftDate(1)"
+            >
+              ›
+            </button>
+          </div>
+
+          <select
+            v-if="recentActiveDates.length > 0"
+            :value="recentActiveDates.some((p) => p.date === selectedDate) ? selectedDate : ''"
+            class="rounded-lg border px-2.5 py-1 text-xs outline-none"
+            style="background: var(--color-bg-base); border-color: var(--color-border-default); color: var(--color-text-primary)"
+            @change="selectedDate = ($event.target as HTMLSelectElement).value"
+          >
+            <option value="" disabled>选择历史有记录日期...</option>
+            <option v-for="p in recentActiveDates" :key="p.date" :value="p.date">
+              {{ p.date }} (工作 {{ formatDuration(p.totalWorkSec) }} · 摸鱼 {{ formatDuration(p.leisureSec) }})
+            </option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs">
+          <span
+            v-if="!isToday"
+            class="rounded-full px-2.5 py-0.5 text-[11px]"
+            style="background: rgba(245, 158, 11, 0.16); color: #fbbf24"
+          >
+            历史概要 · {{ selectedDate }}
+          </span>
+          <span
+            v-else
+            class="rounded-full px-2.5 py-0.5 text-[11px]"
+            style="background: rgba(16, 185, 129, 0.16); color: #34d399"
+          >
+            今日实时
+          </span>
+          <button
+            v-if="!isToday"
+            type="button"
+            class="rounded-md border px-2 py-0.5 text-[11px] transition hover:bg-white/5"
+            style="border-color: var(--color-border-default); color: var(--color-text-secondary)"
+            @click="goToday"
+          >
+            回到今天
+          </button>
+        </div>
+      </div>
+
       <SummaryCards :summary="summary" />
 
       <TimelineBar
@@ -345,7 +494,10 @@ onBeforeUnmount(() => {
           class="rounded-xl border p-4 space-y-3"
           style="background: var(--color-bg-elevated); border-color: var(--color-border-muted)"
         >
-          <h3 class="text-xs font-semibold" style="color: var(--color-text-primary)">Top 应用时长</h3>
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold" style="color: var(--color-text-primary)">Top 应用时长</h3>
+            <span class="text-[11px]" style="color: var(--color-text-tertiary)">点击分类可快速修正</span>
+          </div>
           <div
             v-if="!summary?.topApps.length"
             class="py-8 text-center text-xs"
@@ -357,22 +509,79 @@ onBeforeUnmount(() => {
             <div
               v-for="app in summary.topApps.slice(0, 8)"
               :key="`${app.appName}-${app.category}`"
-              class="flex items-center justify-between rounded-lg border px-3 py-2 text-xs"
+              class="rounded-lg border px-3 py-2 text-xs space-y-1.5"
               style="background: var(--color-bg-base); border-color: var(--color-border-muted)"
             >
-              <div class="flex items-center gap-2 min-w-0">
-                <span
-                  class="inline-block h-2 w-2 shrink-0 rounded-full"
-                  :style="{ background: CATEGORY_META[app.category].color }"
-                />
-                <span class="truncate font-medium" style="color: var(--color-text-primary)">{{ app.appName }}</span>
-                <span class="text-[10px]" style="color: var(--color-text-tertiary)">
-                  {{ CATEGORY_META[app.category].label }}
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span
+                    class="inline-block h-2 w-2 shrink-0 rounded-full"
+                    :style="{ background: CATEGORY_META[app.category].color }"
+                  />
+                  <span class="truncate font-medium" style="color: var(--color-text-primary)">{{ app.appName }}</span>
+                  <button
+                    type="button"
+                    class="shrink-0 rounded px-1.5 py-0.5 text-[10px] transition hover:opacity-80"
+                    :style="{
+                      background: CATEGORY_META[app.category].badgeBg,
+                      color: CATEGORY_META[app.category].color
+                    }"
+                    title="点击修改该应用的分类"
+                    @click="editingAppKey = editingAppKey === `${app.appName}-${app.category}` ? null : `${app.appName}-${app.category}`"
+                  >
+                    {{ CATEGORY_META[app.category].label }}
+                  </button>
+                </div>
+                <span class="font-mono shrink-0" style="color: var(--color-text-secondary)">
+                  {{ formatDuration(app.durationSec) }}
+                  <span class="text-[10px]" style="color: var(--color-text-tertiary)">
+                    ({{ Math.round((app.durationSec / Math.max(1, summary.totalActiveSec)) * 100) }}%)
+                  </span>
                 </span>
               </div>
-              <span class="font-mono shrink-0" style="color: var(--color-text-secondary)">
-                {{ formatDuration(app.durationSec) }}
-              </span>
+
+              <div class="h-1 w-full overflow-hidden rounded-full" style="background: var(--color-bg-elevated)">
+                <div
+                  class="h-full rounded-full transition-all"
+                  :style="{
+                    width: `${Math.min(100, Math.round((app.durationSec / Math.max(1, summary.topApps[0].durationSec)) * 100))}%`,
+                    background: CATEGORY_META[app.category].color
+                  }"
+                />
+              </div>
+
+              <div
+                v-if="editingAppKey === `${app.appName}-${app.category}`"
+                class="pt-1.5 border-t space-y-2"
+                style="border-color: var(--color-border-muted)"
+              >
+                <div class="flex items-center justify-between text-[11px]" style="color: var(--color-text-secondary)">
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input v-model="editingAppSaveRule" type="checkbox" class="accent-indigo-500" />
+                    保存为永久分类规则
+                  </label>
+                  <button
+                    type="button"
+                    class="hover:underline"
+                    style="color: var(--color-text-tertiary)"
+                    @click="editingAppKey = null"
+                  >
+                    取消
+                  </button>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button
+                    v-for="cat in CATEGORY_LIST"
+                    :key="cat.id"
+                    type="button"
+                    class="rounded px-2 py-0.5 text-[11px] font-medium transition hover:opacity-85"
+                    :style="{ background: cat.badgeBg, color: cat.color }"
+                    @click="handleReclassifyApp(app.appName, cat.id)"
+                  >
+                    {{ cat.label }}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -411,7 +620,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <TrendPanel v-show="activeTab === 'trends'" :active="activeTab === 'trends'" />
+    <TrendPanel v-show="activeTab === 'trends'" :active="activeTab === 'trends'" @select-date="handleSelectDate" />
 
     <AiCoachPanel v-show="activeTab === 'ai'" :date="selectedDate" />
 

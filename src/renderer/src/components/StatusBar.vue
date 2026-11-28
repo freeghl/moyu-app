@@ -104,7 +104,7 @@ onBeforeUnmount(() => {
           v-if="timeCoachStatus && timeCoachStatus.state !== 'stopped'"
           type="button"
           class="flex items-center gap-1.5 rounded px-1.5 py-0.5 transition hover:bg-white/10"
-          :title="timeCoachStatus.breakReminderDue ? '连续专注较久，建议休息一下' : '点击打开个人时间账单'"
+          :title="timeCoachStatus.breakReminderDue ? '连续专注较久，建议休息一下' : '点击打开工作统计'"
           @click="openTimeCoach"
         >
           <span
@@ -116,7 +116,9 @@ onBeforeUnmount(() => {
                   : 'var(--color-warning)'
             }"
           />
-          <span>今日工作 {{ formatDuration(timeCoachStatus.todayWorkSec) }}</span>
+          <span>
+            工作 {{ formatDuration(timeCoachStatus.todayWorkSec) }} · 摸鱼 {{ formatDuration(timeCoachStatus.todayLeisureSec ?? 0) }}
+          </span>
         </button>
         <span v-if="timeCoachStatus && timeCoachStatus.state !== 'stopped'" class="text-zinc-700">|</span>
         <span>已打开标签: {{ tabStore.tabs.length }}</span>

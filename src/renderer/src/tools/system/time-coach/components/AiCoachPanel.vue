@@ -71,7 +71,7 @@ function buildPrompts(mode: 'review' | 'report' | 'weekly', digest: string): Arr
       {
         role: 'system',
         content:
-          '你是一位严谨高效的技术工作助手。请根据用户提供的脱敏时间账单统计和用户主动填写的目标/备注，生成一份结构清晰、可直接发送的工作日报草稿（Markdown 格式）。严禁根据软件时长编造未提及的具体业务产出；如果用户未填写具体产出，请在对应位置留出简短占位提示。'
+          '你是一位严谨高效的技术工作助手。请根据用户提供的脱敏工作统计和用户主动填写的目标/备注，生成一份结构清晰、可直接发送的工作日报草稿（Markdown 格式）。严禁根据软件时长编造未提及的具体业务产出；如果用户未填写具体产出，请在对应位置留出简短占位提示。'
       },
       {
         role: 'user',
@@ -89,7 +89,7 @@ function buildPrompts(mode: 'review' | 'report' | 'weekly', digest: string): Arr
       },
       {
         role: 'user',
-        content: `请分析以下近 7 天时间账单摘要：\n\n${digest}`
+        content: `请分析以下近 7 天工作统计摘要：\n\n${digest}`
       }
     ]
   }
@@ -98,7 +98,7 @@ function buildPrompts(mode: 'review' | 'report' | 'weekly', digest: string): Arr
     {
       role: 'system',
       content:
-        '你是一位理性、温和、懂开发者工作节奏的 AI 精力教练。请基于今日脱敏后的时间账单摘要与用户精力自评，给出：1) 今日工作与专注节奏点评；2) 注意力切换/碎片化分析；3) 明日可落地的节奏与防过劳建议。控制篇幅在 300-500 字，避免空话。'
+        '你是一位理性、温和、懂开发者工作节奏的 AI 精力教练。请基于今日脱敏后的工作统计摘要与用户精力自评，给出：1) 今日工作与专注节奏点评；2) 注意力切换/碎片化分析；3) 明日可落地的节奏与防过劳建议。控制篇幅在 300-500 字，避免空话。'
     },
     {
       role: 'user',
@@ -257,7 +257,7 @@ onMounted(() => {
           <textarea
             v-model="note.goal"
             rows="3"
-            placeholder="例如：完成时间账单核心采集模块；修复登录态刷新问题..."
+            placeholder="例如：完成工作统计核心采集模块；修复登录态刷新问题..."
             class="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:border-indigo-500"
             style="background: var(--color-bg-base); border-color: var(--color-border-default); color: var(--color-text-primary)"
             @blur="saveNoteFields"

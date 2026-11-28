@@ -90,11 +90,22 @@ pnpm dev
 # 执行类型检查
 pnpm type-check
 
-# 构建安装包
+# 编译构建产物（输出至 out/ 目录）
 pnpm build
 
 # 预览构建产物
 pnpm preview
+
+# 打包当前平台安装包（先编译再打包，产物输出至 dist/ 目录）
+pnpm build && pnpm exec electron-builder
+
+# 指定平台打包
+pnpm build && pnpm exec electron-builder --win    # Windows
+pnpm build && pnpm exec electron-builder --mac    # macOS
+pnpm build && pnpm exec electron-builder --linux  # Linux
+
+# 仅生成免安装目录（用于快速验证打包结果）
+pnpm build && pnpm exec electron-builder --dir
 ```
 
 ---

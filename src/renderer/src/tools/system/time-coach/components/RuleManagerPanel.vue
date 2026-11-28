@@ -65,7 +65,7 @@ async function clearAllHistory(): Promise<void> {
   if (!window.api?.timeCoach) return
   await window.api.timeCoach.clearHistory()
   confirmClear.value = false
-  feedback.value = '已清空所有本地时间账单记录'
+  feedback.value = '已清空所有本地工作统计记录'
   emit('updated')
 }
 

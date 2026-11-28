@@ -114,6 +114,7 @@ export interface TimeCoachStatus {
   currentSegmentStartAt?: number
   todayWorkSec: number
   todayFocusSec: number
+  todayLeisureSec?: number
   currentFocusStreakSec: number
   breakReminderDue: boolean
   lastError?: string

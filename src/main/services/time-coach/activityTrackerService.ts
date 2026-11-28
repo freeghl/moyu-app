@@ -125,6 +125,7 @@ class ActivityTrackerService {
       currentSegmentStartAt: this.currentSegment?.startAt,
       todayWorkSec: summary.totalWorkSec,
       todayFocusSec: summary.focusSec,
+      todayLeisureSec: summary.leisureSec,
       currentFocusStreakSec: currentStreakSec,
       breakReminderDue,
       lastError: this.lastError
