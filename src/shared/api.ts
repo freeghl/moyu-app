@@ -41,7 +41,13 @@ export interface AppShellAPI {
 }
 
 export interface ShortcutsAPI {
-  apply: (bossKey: string, hideKey: string, summonKey: string) => Promise<ShortcutApplyResult>
+  apply: (
+    bossKey: string,
+    hideKey: string,
+    summonKey: string,
+    videoPreviousKey: string,
+    videoNextKey: string
+  ) => Promise<ShortcutApplyResult>
 }
 
 export interface AiAPI {

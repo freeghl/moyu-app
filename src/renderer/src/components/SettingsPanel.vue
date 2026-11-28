@@ -7,9 +7,11 @@ import { useSettingsStore } from '../stores/settingsStore'
 const prefs = usePrefsStore()
 const backgroundSettings = useSettingsStore()
 
+type ShortcutField = 'bossKey' | 'hideKey' | 'summonKey' | 'videoPreviousKey' | 'videoNextKey'
+
 const version = ref('')
 const dataDir = ref('')
-const recordField = ref<'bossKey' | 'hideKey' | 'summonKey' | null>(null)
+const recordField = ref<ShortcutField | null>(null)
 const shortcutError = ref('')
 const shortcutSaving = ref(false)
 
@@ -62,7 +64,14 @@ function toAccelerator(event: KeyboardEvent): string | null {
   const isFunctionKey = /^F\d{1,2}$/.test(key)
   if (!modifiers.length && !isFunctionKey) return null
 
-  return [...modifiers, key.length === 1 ? key.toUpperCase() : key].join('+')
+  const keyAliases: Record<string, string> = {
+    ArrowUp: 'Up',
+    ArrowDown: 'Down',
+    ArrowLeft: 'Left',
+    ArrowRight: 'Right',
+    ' ': 'Space'
+  }
+  return [...modifiers, keyAliases[key] ?? (key.length === 1 ? key.toUpperCase() : key)].join('+')
 }
 
 async function handleRecordKey(event: KeyboardEvent): Promise<void> {
@@ -83,7 +92,7 @@ async function handleRecordKey(event: KeyboardEvent): Promise<void> {
   await apply({ [field]: accelerator })
 }
 
-async function apply(patch: Partial<Pick<AppSettings, 'bossKey' | 'hideKey' | 'summonKey'>>): Promise<void> {
+async function apply(patch: Partial<Pick<AppSettings, ShortcutField>>): Promise<void> {
   const api = window.api?.shortcuts
   if (!api) return
 
@@ -91,7 +100,13 @@ async function apply(patch: Partial<Pick<AppSettings, 'bossKey' | 'hideKey' | 's
   shortcutSaving.value = true
   shortcutError.value = ''
   try {
-    const result = await api.apply(next.bossKey, next.hideKey, next.summonKey)
+    const result = await api.apply(
+      next.bossKey,
+      next.hideKey,
+      next.summonKey,
+      next.videoPreviousKey,
+      next.videoNextKey
+    )
     if (!result.ok) {
       shortcutError.value = result.error ?? '快捷键注册失败'
       return
@@ -104,7 +119,7 @@ async function apply(patch: Partial<Pick<AppSettings, 'bossKey' | 'hideKey' | 's
   }
 }
 
-async function clearShortcut(field: 'bossKey' | 'hideKey' | 'summonKey'): Promise<void> {
+async function clearShortcut(field: ShortcutField): Promise<void> {
   await apply({ [field]: '' })
 }
 
@@ -278,7 +293,9 @@ function hideToTray(): void {
             v-for="item in [
               { field: 'bossKey' as const, title: '老板键', desc: '全局生效，切换假代码界面 / 摸鱼界面' },
               { field: 'hideKey' as const, title: '快速隐藏', desc: '全局生效，按下立即隐藏窗口，再按一次恢复' },
-              { field: 'summonKey' as const, title: '全局唤起', desc: '在任何程序里唤起窗口并打开命令面板' }
+              { field: 'summonKey' as const, title: '全局唤起', desc: '在任何程序里唤起窗口并打开命令面板' },
+              { field: 'videoPreviousKey' as const, title: '视频上一条', desc: '桌面悬停视频播放时生效，切换到上一条视频' },
+              { field: 'videoNextKey' as const, title: '视频下一条', desc: '桌面悬停视频播放时生效，切换到下一条视频' }
             ]"
             :key="item.field"
             class="flex items-center justify-between gap-6"

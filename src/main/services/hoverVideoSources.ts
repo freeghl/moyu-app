@@ -15,24 +15,33 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
   if (window.__moyuHoverVideo) return;
 
   const style = document.createElement('style');
-  style.textContent = 'body.moyu-hover-video-mode *{visibility:hidden!important;}body.moyu-hover-video-mode .moyu-hover-player,body.moyu-hover-video-mode .moyu-hover-player *{visibility:visible!important;}.moyu-hover-player{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;margin:0!important;transform:none!important;z-index:2147483647!important;background:#000!important;overflow:hidden!important;}.moyu-hover-player video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important;}';
+  style.textContent = 'html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#000!important;}body.moyu-hover-video-mode [data-e2e="feed-navigation-prev"],body.moyu-hover-video-mode [data-e2e="feed-navigation-next"]{display:none!important;}body.moyu-hover-video-mode *{visibility:hidden!important;}body.moyu-hover-video-mode .moyu-hover-player,body.moyu-hover-video-mode .moyu-hover-player *{visibility:visible!important;}.moyu-hover-player{width:100vw!important;height:100vh!important;margin:0!important;transform:none!important;z-index:2147483647!important;background:#000!important;overflow:hidden!important;}.moyu-hover-player video{position:fixed!important;left:0!important;top:0!important;width:100vw!important;height:100vh!important;object-fit:cover!important;opacity:1!important;pointer-events:none!important;z-index:0!important;}';
   document.documentElement.append(style);
 
   let active = false;
   let muted = true;
   let current = null;
   let moving = false;
-  let lastWheelAt = 0;
+  let lastSwitchAt = 0;
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   async function startPlayback(video) {
-    try {
-      const playback = video.play();
-      playback?.catch(() => {});
-    } catch {}
-    const deadline = Date.now() + 4000;
-    while (video.paused && Date.now() < deadline) await delay(50);
+    const deadline = Date.now() + 6000;
+    let playingSince = 0;
+    while (Date.now() < deadline) {
+      try {
+        const playback = video.play();
+        playback?.catch(() => {});
+      } catch {}
+      await delay(100);
+      if (video.paused) {
+        playingSince = 0;
+      } else {
+        if (!playingSince) playingSince = Date.now();
+        if (Date.now() - playingSince >= 1200) return;
+      }
+    }
   }
 
   function findFeedVideo(exclude) {
@@ -45,37 +54,87 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
     });
   }
 
+  function renderCurrent() {
+    if (!current) return;
+    const card = current.closest('[data-e2e="feed-video"]');
+    for (const element of document.querySelectorAll('.moyu-hover-player')) {
+      if (element !== card) element.classList.remove('moyu-hover-player');
+    }
+    card?.classList.add('moyu-hover-player');
+    if (card && !card.__moyuHoverSized) {
+      for (const animation of card.getAnimations()) {
+        if (animation.effect?.getComputedTiming().iterations !== Infinity) animation.cancel();
+      }
+      card.style.setProperty('position', 'relative', 'important');
+      card.style.setProperty('width', '100vw', 'important');
+      card.style.setProperty('min-width', '100vw', 'important');
+      card.style.setProperty('max-width', '100vw', 'important');
+      card.style.setProperty('height', '100vh', 'important');
+      card.style.setProperty('min-height', '100vh', 'important');
+      card.style.setProperty('max-height', '100vh', 'important');
+      card.style.setProperty('margin', '0', 'important');
+      card.style.setProperty('transform', 'none', 'important');
+      card.style.setProperty('translate', 'none', 'important');
+      card.style.setProperty('inset', '0', 'important');
+      for (let ancestor = card.parentElement; ancestor && ancestor !== document.body; ancestor = ancestor.parentElement) {
+        ancestor.style.setProperty('width', '100vw', 'important');
+        ancestor.style.setProperty('min-width', '100vw', 'important');
+        ancestor.style.setProperty('max-width', '100vw', 'important');
+        ancestor.style.setProperty('left', '0', 'important');
+        ancestor.style.setProperty('inset', '0', 'important');
+        ancestor.style.setProperty('inset-inline', '0', 'important');
+        ancestor.style.setProperty('right', 'auto', 'important');
+        ancestor.style.setProperty('transform', 'none', 'important');
+        ancestor.style.setProperty('translate', 'none', 'important');
+        ancestor.style.setProperty('padding', '0', 'important');
+        ancestor.style.setProperty('margin', '0', 'important');
+        ancestor.style.setProperty('margin-inline', '0', 'important');
+      }
+      card.__moyuHoverSized = true;
+    }
+    document.body.classList.add('moyu-hover-video-mode');
+  }
+
+  async function showVideo(video) {
+    const previous = current;
+    current = video;
+    renderCurrent();
+    video.muted = muted;
+    previous?.pause();
+    if (active) await startPlayback(video);
+    return { playing: active ? !video.paused : true };
+  }
+
   async function move(direction) {
-    if (moving) return { playing: false };
+    if (moving || (direction !== -1 && direction !== 1)) return { playing: false };
     moving = true;
     try {
-      if (direction < 0) document.querySelector('[data-e2e="feed-navigation-prev"]')?.click();
-      else if (direction > 0) document.querySelector('[data-e2e="feed-navigation-next"]')?.click();
+      const selector = direction < 0
+        ? '[data-e2e="feed-navigation-prev"]'
+        : '[data-e2e="feed-navigation-next"]';
+      const button = document.querySelector(selector);
+      if (!button) return { playing: false };
+      button.click();
       const deadline = Date.now() + 10000;
       while (Date.now() < deadline) {
         const next = findFeedVideo(current);
-        if (next?.currentSrc) {
-          const previous = current;
-          previous?.classList.remove('moyu-hover-video');
-          previous?.closest('[data-e2e="feed-video"]')?.classList.remove('moyu-hover-player');
-          const nextCard = next.closest('[data-e2e="feed-video"]');
-          nextCard?.classList.add('moyu-hover-player');
-          document.body.classList.add('moyu-hover-video-mode');
-          current = next;
-          next.muted = muted;
-          next.addEventListener('ended', () => {
-            if (active) void move(1);
-          });
-          previous?.pause();
-          if (active) await startPlayback(next);
-          return { playing: active ? !next.paused : true };
-        }
+        if (next?.currentSrc) return await showVideo(next);
         await delay(100);
       }
       return { playing: false };
     } finally {
       moving = false;
     }
+  }
+
+  async function initialize() {
+    const deadline = Date.now() + 10000;
+    while (Date.now() < deadline) {
+      const video = findFeedVideo();
+      if (video?.currentSrc) return await showVideo(video);
+      await delay(100);
+    }
+    return { playing: false };
   }
 
   function pause() {
@@ -87,22 +146,14 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
     active = true;
     muted = Boolean(options.muted);
     if (current) current.muted = muted;
-    if (!current || options.advance) {
-      const result = await move(options.advance ? 1 : 0);
-      if (!result.playing && current) {
-        await startPlayback(current)
-        return { playing: !current.paused };
-      }
-      return result;
-    }
-    if (!current) return { playing: false };
+    if (!current) return initialize();
     await startPlayback(current);
     return { playing: !current.paused };
   }
 
   function wheel(direction) {
-    if (!active || moving || Date.now() - lastWheelAt < 650) return { playing: false };
-    lastWheelAt = Date.now();
+    if (!active || moving || Date.now() - lastSwitchAt < 650) return { playing: false };
+    lastSwitchAt = Date.now();
     return move(direction);
   }
 
@@ -117,9 +168,17 @@ const TIKTOK_PLAYER_SCRIPT = String.raw`(() => {
   };
 
   const observer = new MutationObserver(() => {
-    if (active && !current && !moving) void move(0);
+    if (active && !current) void initialize();
   });
   observer.observe(document.body, { childList: true, subtree: true });
+  setInterval(() => {
+    if (!active || !current) return;
+    renderCurrent();
+    if (current.paused && !current.ended) {
+      const playback = current.play();
+      playback?.catch(() => {});
+    }
+  }, 500);
 })()`
 
 function createDouyinPlayerScript(): string {
@@ -137,8 +196,11 @@ function createDouyinPlayerScript(): string {
   let muted = true;
   let current = null;
   let playerContainer = null;
+  let initializing = false;
   let moving = false;
-  let lastWheelAt = 0;
+  let lastSwitchAt = 0;
+  let preparedNextId = '';
+  let prepareNextPromise;
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const isVideoPage = () => /^\/video\/\d+/.test(location.pathname);
@@ -194,14 +256,17 @@ function createDouyinPlayerScript(): string {
     video.style.setProperty('object-fit', 'cover', 'important');
     video.style.setProperty('object-position', 'center', 'important');
     video.style.setProperty('transform', landscape ? 'scale(0.92)' : 'none', 'important');
-    if (!video.__moyuHoverEndedHandler) {
-      video.__moyuHoverEndedHandler = () => {
-        if (active) void move(1);
-      };
-      video.addEventListener('ended', video.__moyuHoverEndedHandler);
-    }
     if (active) await startPlayback(video);
     return { playing: active ? !video.paused : true };
+  }
+
+  function parseFeedVideoIds(html) {
+    const document = new DOMParser().parseFromString(html, 'text/html');
+    const ids = [...document.querySelectorAll('[data-aweme-id]')]
+      .map((element) => element.getAttribute('data-aweme-id'))
+      .filter((id) => id && /^\d+$/.test(id));
+    if (ids.length) return [...new Set(ids)];
+    return [...new Set([...html.matchAll(/\/video\/(\d+)/g)].map((match) => match[1]))];
   }
 
   function feedVideoIds() {
@@ -211,6 +276,55 @@ function createDouyinPlayerScript(): string {
     if (cardIds.length) return [...new Set(cardIds)];
     const html = document.documentElement?.innerHTML || '';
     return [...new Set([...html.matchAll(/\/video\/(\d+)/g)].map((match) => match[1]))];
+  }
+
+  function chooseNextVideoId(ids, currentId = '') {
+    let last = '';
+    try { last = sessionStorage.getItem(LAST_VIDEO_KEY) || ''; } catch {}
+    const candidates = ids.filter((id) => id !== last && id !== currentId);
+    const pool = candidates.length ? candidates : ids.filter((id) => id !== currentId);
+    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : '';
+  }
+
+  function prepareNext() {
+    if (prepareNextPromise) return prepareNextPromise;
+    if (!active || !isVideoPage()) return Promise.resolve();
+    prepareNextPromise = (async () => {
+      const currentId = location.pathname.match(/^\/video\/(\d+)/)?.[1] || '';
+      const ids = feedVideoIds();
+      if (ids.length) {
+        preparedNextId = chooseNextVideoId(ids, currentId);
+        return;
+      }
+      try {
+        const response = await fetch(FEED_URL, { credentials: 'include' });
+        if (!response.ok) return;
+        preparedNextId = chooseNextVideoId(parseFeedVideoIds(await response.text()), currentId);
+      } catch {
+      }
+    })().finally(() => { prepareNextPromise = null; });
+    return prepareNextPromise;
+  }
+
+  function videoUrl(id) {
+    return 'https://www.douyin.com/video/' + id;
+  }
+
+  async function target(direction) {
+    if (!isVideoPage()) return null;
+    const currentId = location.pathname.match(/^\/video\/(\d+)/)?.[1];
+    if (direction < 0) {
+      const history = videoHistory();
+      const index = history.lastIndexOf(currentId);
+      return index > 0
+        ? { url: videoUrl(history[index - 1]), previousUrl: index > 1 ? videoUrl(history[index - 2]) : '' }
+        : null;
+    }
+    if (direction > 0) {
+      await prepareNext();
+      return preparedNextId ? { url: videoUrl(preparedNextId), previousUrl: videoUrl(currentId) } : null;
+    }
+    return null;
   }
 
   function videoHistory() {
@@ -229,27 +343,44 @@ function createDouyinPlayerScript(): string {
   }
 
   async function move(direction) {
-    if (moving) return { playing: false };
+    if (moving || (direction !== -1 && direction !== 1)) return { playing: false };
     moving = true;
+    try {
+      if (!isVideoPage()) return direction > 0 ? await initialize() : { playing: false };
+      const currentId = location.pathname.match(/^\/video\/(\d+)/)?.[1];
+      if (currentId) rememberVideo(currentId);
+      if (direction < 0) {
+        const history = videoHistory();
+        const index = history.lastIndexOf(currentId);
+        if (index <= 0) return { playing: false };
+        const previous = history[index - 1];
+        try { sessionStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(history.slice(0, index))); } catch {}
+        setTimeout(() => location.assign('https://www.douyin.com/video/' + previous), 0);
+      } else {
+        const nextId = preparedNextId || chooseNextVideoId(feedVideoIds(), currentId);
+        preparedNextId = '';
+        if (nextId) {
+          try { sessionStorage.setItem(LAST_VIDEO_KEY, nextId); } catch {}
+          setTimeout(() => location.assign('https://www.douyin.com/video/' + nextId), 0);
+        } else {
+          setTimeout(() => location.assign(FEED_URL), 0);
+        }
+      }
+      return { pendingNavigation: true, playing: false };
+    } finally {
+      moving = false;
+    }
+  }
+
+  async function initialize() {
+    if (initializing) return { playing: false };
+    initializing = true;
     try {
       if (isVideoPage()) {
         const currentId = location.pathname.match(/^\/video\/(\d+)/)?.[1];
         if (currentId) rememberVideo(currentId);
-        if (direction === 0) {
-          const video = await waitForVideo();
-          return video ? await attach(video) : { playing: false };
-        }
-        if (direction < 0) {
-          const history = videoHistory();
-          const index = history.lastIndexOf(currentId);
-          if (index <= 0) return { playing: false };
-          const previous = history[index - 1];
-          try { sessionStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(history.slice(0, index))); } catch {}
-          setTimeout(() => location.assign('https://www.douyin.com/video/' + previous), 0);
-          return { pendingNavigation: true, playing: false };
-        }
-        setTimeout(() => location.assign(FEED_URL), 0);
-        return { pendingNavigation: true, playing: false };
+        const video = await waitForVideo();
+        return video ? await attach(video) : { playing: false };
       }
 
       const ids = feedVideoIds();
@@ -264,7 +395,7 @@ function createDouyinPlayerScript(): string {
       setTimeout(() => location.assign('https://www.douyin.com/video/' + next), 0);
       return { pendingNavigation: true, playing: false };
     } finally {
-      moving = false;
+      initializing = false;
     }
   }
 
@@ -277,21 +408,45 @@ function createDouyinPlayerScript(): string {
     active = true;
     muted = Boolean(options.muted);
     if (current) current.muted = muted;
-    if (!current || options.advance) return move(options.advance ? 1 : 0);
+    if (!current) return initialize();
     await startPlayback(current);
     return { playing: !current.paused };
   }
 
   function wheel(direction) {
-    if (!active || moving || Date.now() - lastWheelAt < 650) return { playing: false };
-    lastWheelAt = Date.now();
+    if (!active || moving || Date.now() - lastSwitchAt < 650) return { playing: false };
+    lastSwitchAt = Date.now();
     return move(direction);
+  }
+
+  function remember(value) {
+    const id = String(value).match(/\/video\/(\d+)/)?.[1];
+    if (id) rememberVideo(id);
+  }
+
+  async function prepare() {
+    const wasActive = active;
+    active = true;
+    muted = true;
+    try {
+      const result = current ? { playing: true } : await initialize();
+      if (result.pendingNavigation || !current) return { ready: false };
+      current.muted = true;
+      await startPlayback(current);
+      current.pause();
+      return { ready: true, url: location.href };
+    } finally {
+      active = wasActive;
+    }
   }
 
   window.__moyuHoverVideo = {
     play,
     pause,
     wheel,
+    target,
+    remember,
+    prepare,
     setMuted(value) {
       muted = Boolean(value);
       if (current) current.muted = muted;
@@ -299,7 +454,7 @@ function createDouyinPlayerScript(): string {
   };
 
   const observer = new MutationObserver(() => {
-    if (active && !current && !moving && isVideoPage()) void move(0);
+    if (active && !current && isVideoPage()) void initialize();
   });
   observer.observe(document.body, { childList: true, subtree: true });
 })()`
@@ -312,16 +467,31 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
     const FEED_URL = ${JSON.stringify(feedUrl)};
     const LINK_SELECTOR = ${JSON.stringify(linkSelector)};
     const VIDEO_HISTORY_KEY = 'moyu-hover-video-history';
+    const CONTROL_SELECTORS = [
+      '[class*="bpx-player-control"]',
+      '[class*="bpx-player-ctrl"]',
+      '[class*="bilibili-player-video-control"]',
+      '[class*="bpx-player-progress"]',
+      '[class*="bilibili-player-video-progress"]',
+      '.bpx-player-top-wrap',
+      '.bpx-player-shadow-progress-area',
+      '.bpx-player-sending-area',
+      '.squirtle-progress-wrap',
+      '.squirtle-controller-wrap'
+    ].join(',');
     const style = document.createElement('style');
-    style.textContent = 'body.moyu-hover-video-mode *{visibility:hidden!important;}body.moyu-hover-video-mode .moyu-hover-player,body.moyu-hover-video-mode .moyu-hover-player *{visibility:visible!important;}.moyu-hover-player{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;margin:0!important;transform:none!important;z-index:2147483647!important;background:#000!important;overflow:hidden!important;}.moyu-hover-player video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;opacity:1!important;}';
+    style.textContent = 'html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;scrollbar-width:none!important;}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;}body.moyu-hover-video-mode *{visibility:hidden!important;}body.moyu-hover-video-mode .moyu-hover-player,body.moyu-hover-video-mode .moyu-hover-player *{visibility:visible!important;}body.moyu-hover-video-mode ' + CONTROL_SELECTORS + '{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;}.moyu-hover-player{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;margin:0!important;transform:none!important;z-index:2147483647!important;background:#000!important;overflow:hidden!important;}.moyu-hover-player video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;opacity:1!important;}';
     document.documentElement.append(style);
 
     let active = false;
     let muted = true;
     let current = null;
     let playerContainer = null;
+    let initializing = false;
     let moving = false;
-    let lastWheelAt = 0;
+    let lastSwitchAt = 0;
+    let preparedNextUrl = '';
+    let prepareNextPromise;
 
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const isVideoPage = () => /\/video\//.test(location.pathname);
@@ -351,6 +521,15 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
       return null;
     }
 
+    function hidePlayerControls() {
+      for (const element of document.querySelectorAll(CONTROL_SELECTORS)) {
+        element.style.setProperty('display', 'none', 'important');
+        element.style.setProperty('opacity', '0', 'important');
+        element.style.setProperty('visibility', 'hidden', 'important');
+        element.style.setProperty('pointer-events', 'none', 'important');
+      }
+    }
+
     async function attach(video) {
       const previous = current;
       const container = video.closest('.xgplayer-inner, .xgplayer, .bpx-player-video-wrap, #bilibili-player') || video;
@@ -361,10 +540,10 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
       document.body.append(container);
       container.classList.add('moyu-hover-player');
       document.body.classList.add('moyu-hover-video-mode');
+      video.controls = false;
+      video.removeAttribute('controls');
       video.muted = muted;
-      video.addEventListener('ended', () => {
-        if (active) void move(1);
-      });
+      hidePlayerControls();
       if (active) await startPlayback(video);
       return { playing: active ? !video.paused : true };
     }
@@ -380,9 +559,9 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
       }
     }
 
-    function feedLinks() {
+    function feedLinksFrom(root) {
       const links = [];
-      for (const element of document.querySelectorAll(LINK_SELECTOR)) {
+      for (const element of root.querySelectorAll(LINK_SELECTOR)) {
         const href = element.getAttribute('href');
         if (!href) continue;
         try {
@@ -391,6 +570,60 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
         } catch {}
       }
       return [...new Map(links.map((url) => [canonicalVideoUrl(url.href), url])).values()];
+    }
+
+    function feedLinks() {
+      return feedLinksFrom(document);
+    }
+
+    function chooseNextUrl(links, currentUrl = '') {
+      let last = '';
+      try { last = canonicalVideoUrl(sessionStorage.getItem('moyu-hover-last-video') || ''); } catch {}
+      const candidates = links.filter((url) => {
+        const key = canonicalVideoUrl(url.href);
+        return key !== last && key !== currentUrl;
+      });
+      const pool = candidates.length ? candidates : links.filter((url) => canonicalVideoUrl(url.href) !== currentUrl);
+      return pool.length ? canonicalVideoUrl(pool[Math.floor(Math.random() * pool.length)].href) : '';
+    }
+
+    function prepareNext() {
+      if (prepareNextPromise) return prepareNextPromise;
+      if (!active || !isVideoPage()) return Promise.resolve();
+      prepareNextPromise = (async () => {
+        const currentUrl = canonicalVideoUrl(location.href);
+        const links = feedLinks();
+        if (links.length) {
+          preparedNextUrl = chooseNextUrl(links, currentUrl);
+          return;
+        }
+        try {
+          const response = await fetch(FEED_URL, { credentials: 'include' });
+          if (!response.ok) return;
+          const html = await response.text();
+          const parsed = new DOMParser().parseFromString(html, 'text/html');
+          preparedNextUrl = chooseNextUrl(feedLinksFrom(parsed), currentUrl);
+        } catch {
+        }
+      })().finally(() => { prepareNextPromise = null; });
+      return prepareNextPromise;
+    }
+
+    async function target(direction) {
+      if (!isVideoPage()) return null;
+      const currentUrl = canonicalVideoUrl(location.href);
+      if (direction < 0) {
+        const history = videoHistory();
+        const index = history.lastIndexOf(currentUrl);
+        return index > 0
+          ? { url: history[index - 1], previousUrl: index > 1 ? history[index - 2] : '' }
+          : null;
+      }
+      if (direction > 0) {
+        await prepareNext();
+        return preparedNextUrl ? { url: preparedNextUrl, previousUrl: currentUrl } : null;
+      }
+      return null;
     }
 
     function videoHistory() {
@@ -411,27 +644,43 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
     }
 
     async function move(direction) {
-      if (moving) return { playing: false };
+      if (moving || (direction !== -1 && direction !== 1)) return { playing: false };
       moving = true;
       try {
+        if (!isVideoPage()) return direction > 0 ? await initialize() : { playing: false };
+        const currentUrl = canonicalVideoUrl(location.href);
+        rememberVideo(currentUrl);
+        if (direction < 0) {
+          const history = videoHistory();
+          const index = history.lastIndexOf(currentUrl);
+          if (index <= 0) return { playing: false };
+          const previous = history[index - 1];
+          try { sessionStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(history.slice(0, index))); } catch {}
+          setTimeout(() => location.assign(previous), 0);
+        } else {
+          const nextUrl = preparedNextUrl || chooseNextUrl(feedLinks(), currentUrl);
+          preparedNextUrl = '';
+          if (nextUrl) {
+            try { sessionStorage.setItem('moyu-hover-last-video', nextUrl); } catch {}
+            setTimeout(() => location.assign(nextUrl), 0);
+          } else {
+            setTimeout(() => location.assign(FEED_URL), 0);
+          }
+        }
+        return { pendingNavigation: true, playing: false };
+      } finally {
+        moving = false;
+      }
+    }
+
+    async function initialize() {
+      if (initializing) return { playing: false };
+      initializing = true;
+      try {
         if (isVideoPage()) {
-          const currentUrl = canonicalVideoUrl(location.href);
-          rememberVideo(currentUrl);
-          if (direction === 0) {
-            const video = await waitForVideo();
-            return video ? await attach(video) : { playing: false };
-          }
-          if (direction < 0) {
-            const history = videoHistory();
-            const index = history.lastIndexOf(currentUrl);
-            if (index <= 0) return { playing: false };
-            const previous = history[index - 1];
-            try { sessionStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(history.slice(0, index))); } catch {}
-            setTimeout(() => location.assign(previous), 0);
-            return { pendingNavigation: true, playing: false };
-          }
-          setTimeout(() => location.assign(FEED_URL), 0);
-          return { pendingNavigation: true, playing: false };
+          rememberVideo(canonicalVideoUrl(location.href));
+          const video = await waitForVideo();
+          return video ? await attach(video) : { playing: false };
         }
 
         const links = feedLinks();
@@ -447,7 +696,7 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
         setTimeout(() => location.assign(next.href), 0);
         return { pendingNavigation: true, playing: false };
       } finally {
-        moving = false;
+        initializing = false;
       }
     }
 
@@ -460,21 +709,45 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
       active = true;
       muted = Boolean(options.muted);
       if (current) current.muted = muted;
-      if (!current || options.advance) return move(options.advance ? 1 : 0);
+      if (!current) return initialize();
       await startPlayback(current);
       return { playing: !current.paused };
     }
 
     function wheel(direction) {
-      if (!active || moving || Date.now() - lastWheelAt < 650) return { playing: false };
-      lastWheelAt = Date.now();
+      if (!active || moving || Date.now() - lastSwitchAt < 650) return { playing: false };
+      lastSwitchAt = Date.now();
       return move(direction);
+    }
+
+    function remember(value) {
+      const url = canonicalVideoUrl(value);
+      if (url) rememberVideo(url);
+    }
+
+    async function prepare() {
+      const wasActive = active;
+      active = true;
+      muted = true;
+      try {
+        const result = current ? { playing: true } : await initialize();
+        if (result.pendingNavigation || !current) return { ready: false };
+        current.muted = true;
+        await startPlayback(current);
+        current.pause();
+        return { ready: true, url: location.href };
+      } finally {
+        active = wasActive;
+      }
     }
 
     window.__moyuHoverVideo = {
       play,
       pause,
       wheel,
+      target,
+      remember,
+      prepare,
       setMuted(value) {
         muted = Boolean(value);
         if (current) current.muted = muted;
@@ -482,7 +755,8 @@ function createRandomPlayerScript(feedUrl: string, linkSelector: string): string
     };
 
     const observer = new MutationObserver(() => {
-      if (active && !current && !moving && isVideoPage()) void move(0);
+      hidePlayerControls();
+      if (active && !current && isVideoPage()) void initialize();
     });
     observer.observe(document.body, { childList: true, subtree: true });
   })()`

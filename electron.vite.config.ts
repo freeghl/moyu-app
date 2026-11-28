@@ -13,15 +13,7 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
-    build: {
-      rollupOptions: {
-        input: {
-          index: resolve('src/preload/index.ts'),
-          hoverVideo: resolve('src/preload/hoverVideo.ts')
-        }
-      }
-    }
+    plugins: [externalizeDepsPlugin()]
   },
   renderer: {
     root: './src/renderer',

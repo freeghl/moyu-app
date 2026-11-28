@@ -39,7 +39,14 @@ const api: AppAPI = {
     quit: () => ipcRenderer.invoke('app:quit')
   },
   shortcuts: {
-    apply: (bossKey, hideKey, summonKey) => ipcRenderer.invoke('shortcuts:apply', bossKey, hideKey, summonKey)
+    apply: (bossKey, hideKey, summonKey, videoPreviousKey, videoNextKey) => ipcRenderer.invoke(
+      'shortcuts:apply',
+      bossKey,
+      hideKey,
+      summonKey,
+      videoPreviousKey,
+      videoNextKey
+    )
   },
   background: {
     select: () => ipcRenderer.invoke('background:select'),

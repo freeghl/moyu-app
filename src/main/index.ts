@@ -220,7 +220,13 @@ if (!locked) {
 
     registerAllIpc()
     await activityTrackerService.init()
-    shortcutService.setHandlers({ toggleBoss, toggleHide, summon })
+    shortcutService.setHandlers({
+      toggleBoss,
+      toggleHide,
+      summon,
+      previousVideo: () => { void hoverVideoService.switchVideo(-1) },
+      nextVideo: () => { void hoverVideoService.switchVideo(1) }
+    })
     const shortcutResult = shortcutService.apply(preferences.settings)
     if (!shortcutResult.ok) console.warn('[moyu] 全局快捷键注册失败：', shortcutResult.error)
     preferenceStore.subscribe((next) => {

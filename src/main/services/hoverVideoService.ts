@@ -1,7 +1,6 @@
 import { BrowserWindow, powerMonitor, screen, session } from 'electron'
 import type { Session, WebContents } from 'electron'
 import { randomInt, randomUUID } from 'node:crypto'
-import { join } from 'node:path'
 import {
   HOVER_VIDEO_HEIGHT,
   HOVER_VIDEO_HOTSPOT_SIZE,
@@ -17,16 +16,30 @@ import {
 import { createDefaultPreferences } from '@shared/preferences'
 import { isCursorOnDesktop } from './desktopWindow'
 import { HOVER_VIDEO_SOURCES } from './hoverVideoSources'
+import { shortcutService } from './shortcutService'
 
 const CURSOR_INTERVAL = 32
 const ENTER_DELAY = 220
 const LEAVE_DELAY = 140
 const CAPTURE_DELAY = 1400
+const PRELOAD_DELAY = 2500
 const OVERLAY_STATE_CHANNEL = 'hover-video:state'
 
 interface PlaybackResult {
   playing: boolean
   pendingNavigation?: boolean
+}
+
+interface VideoTarget {
+  url: string
+  previousUrl?: string
+}
+
+interface PreloadedVideo {
+  overlay: BrowserWindow
+  sourceId: HoverVideoSourceId
+  direction: -1 | 1
+  url: string
 }
 
 function contains(hotspot: HoverVideoHotspot, point: Electron.Point): boolean {
@@ -44,13 +57,17 @@ class HoverVideoService {
   private preferences: HoverVideoPreferences = createDefaultPreferences().hoverVideo
   private mainWindow: BrowserWindow | null = null
   private overlays = new Map<HoverVideoSourceId, BrowserWindow>()
+  private watchedOverlays = new WeakSet<BrowserWindow>()
   private prewarming = new Set<HoverVideoSourceId>()
   private loginWindows = new Map<HoverVideoSourceId, BrowserWindow>()
   private sessions = new Map<HoverVideoSourceId, Session>()
   private activeOverlay: BrowserWindow | null = null
   private activeSource?: HoverVideoSourceId
+  private preloadedPrevious?: PreloadedVideo
+  private preloadedNext?: PreloadedVideo
+  private preloadToken = 0
+  private switching = false
   private lastSource?: HoverVideoSourceId
-  private hasPlayed = new Set<HoverVideoSourceId>()
   private cursorTimer: ReturnType<typeof setInterval> | undefined
   private enterTimer: ReturnType<typeof setTimeout> | undefined
   private leaveTimer: ReturnType<typeof setTimeout> | undefined
@@ -91,6 +108,7 @@ class HoverVideoService {
       if (!loginWindow.isDestroyed()) loginWindow.destroy()
     }
     this.loginWindows.clear()
+    this.clearPreloaded()
     for (const overlay of this.overlays.values()) {
       if (!overlay.isDestroyed()) overlay.destroy()
     }
@@ -287,11 +305,178 @@ class HoverVideoService {
     if (this.activeHotspotId === id) this.hide()
   }
 
+  async switchVideo(direction: -1 | 1): Promise<void> {
+    if (this.switching) return
+    const overlay = this.activeOverlay
+    const sourceId = this.activeSource
+    if (!overlay || overlay.isDestroyed() || !sourceId || this.status !== 'playing') return
+
+    const preloaded = direction < 0 ? this.preloadedPrevious : this.preloadedNext
+    if (preloaded?.sourceId === sourceId && !preloaded.overlay.isDestroyed()) {
+      this.switching = true
+      try {
+        await this.activatePreloaded(preloaded, direction)
+      } finally {
+        this.switching = false
+      }
+      return
+    }
+
+    try {
+      await overlay.webContents.executeJavaScript(
+        `window.__moyuHoverVideo?.wheel(${direction})`
+      )
+    } catch (error) {
+      this.notice = error instanceof Error ? error.message : '切换视频失败，请重试。'
+      this.emitState()
+    }
+  }
+
+  private async activatePreloaded(preloaded: PreloadedVideo, direction: -1 | 1): Promise<void> {
+    const previousOverlay = this.activeOverlay
+    if (!previousOverlay || previousOverlay === preloaded.overlay) return
+
+    const sourceId = preloaded.sourceId
+    const activationId = this.activationId
+    const previousUrl = previousOverlay.webContents.getURL()
+    const hotspot = this.preferences.hotspots.find((item) => item.id === this.activeHotspotId)
+    const obsolete = direction < 0 ? this.preloadedNext : this.preloadedPrevious
+    this.preloadToken++
+    if (direction < 0) {
+      this.preloadedPrevious = undefined
+      this.preloadedNext = undefined
+    } else {
+      this.preloadedNext = undefined
+      this.preloadedPrevious = undefined
+    }
+    if (obsolete && !obsolete.overlay.isDestroyed()) obsolete.overlay.destroy()
+
+    void previousOverlay.webContents.executeJavaScript('window.__moyuHoverVideo?.pause()').catch(() => undefined)
+    previousOverlay.setIgnoreMouseEvents(true, { forward: true })
+    previousOverlay.hide()
+
+    this.activeOverlay = preloaded.overlay
+    this.activeSource = sourceId
+    this.overlays.set(sourceId, preloaded.overlay)
+    this.watchActiveOverlay(preloaded.overlay, sourceId)
+    if (direction < 0) {
+      this.preloadedNext = { overlay: previousOverlay, sourceId, direction: 1, url: previousUrl }
+    } else {
+      this.preloadedPrevious = { overlay: previousOverlay, sourceId, direction: -1, url: previousUrl }
+    }
+
+    if (hotspot) this.positionOverlay(preloaded.overlay, hotspot)
+    preloaded.overlay.setIgnoreMouseEvents(true, { forward: true })
+    preloaded.overlay.showInactive()
+    shortcutService.setHoverVideoActive(false)
+
+    try {
+      const result = await preloaded.overlay.webContents.executeJavaScript(
+        `window.__moyuHoverVideo?.play(${JSON.stringify({ muted: this.preferences.muted })})`
+      ) as PlaybackResult | undefined
+      if (activationId !== this.activationId || this.activeOverlay !== preloaded.overlay) {
+        await preloaded.overlay.webContents.executeJavaScript('window.__moyuHoverVideo?.pause()').catch(() => undefined)
+        return
+      }
+      if (!result?.playing) throw new Error('预加载视频播放失败。')
+      this.status = 'playing'
+      const shortcutResult = shortcutService.setHoverVideoActive(true)
+      this.notice = shortcutResult.ok ? undefined : `视频切换快捷键注册失败：${shortcutResult.error}`
+      this.emitState()
+      void this.preloadAdjacent(sourceId)
+    } catch (error) {
+      if (activationId !== this.activationId || this.activeOverlay !== preloaded.overlay) return
+      this.status = 'error'
+      this.notice = error instanceof Error ? error.message : '预加载视频播放失败。'
+      this.emitState()
+    }
+  }
+
+  private async preloadAdjacent(sourceId: HoverVideoSourceId): Promise<void> {
+    const overlay = this.activeOverlay
+    if (!overlay || overlay.isDestroyed() || sourceId === 'tiktok' || this.status !== 'playing') return
+    if (this.preloadedNext && !this.preloadedNext.overlay.isDestroyed()) return
+    const token = ++this.preloadToken
+
+    await new Promise((resolve) => setTimeout(resolve, PRELOAD_DELAY))
+    if (token !== this.preloadToken || this.activeOverlay !== overlay || this.status !== 'playing') return
+
+    if (this.preloadedPrevious && !this.preloadedPrevious.overlay.isDestroyed()) {
+      this.preloadedPrevious.overlay.destroy()
+    }
+    this.preloadedPrevious = undefined
+
+    try {
+      const target = await overlay.webContents.executeJavaScript(
+        'window.__moyuHoverVideo?.target(1)'
+      ) as VideoTarget | null | undefined
+      if (!target?.url || token !== this.preloadToken || this.activeOverlay !== overlay) return
+      await this.preloadVideo(sourceId, 1, target, token)
+    } catch {
+      return
+    }
+  }
+
+  private async preloadVideo(
+    sourceId: HoverVideoSourceId,
+    direction: -1 | 1,
+    target: VideoTarget,
+    token: number
+  ): Promise<void> {
+    const overlay = this.createOverlay(sourceId)
+    const isCurrent = (): boolean => token === this.preloadToken
+      && this.activeSource === sourceId
+      && this.status === 'playing'
+
+    try {
+      await overlay.loadURL(target.url)
+      if (!isCurrent() || overlay.isDestroyed()) {
+        if (!overlay.isDestroyed()) overlay.destroy()
+        return
+      }
+      await this.installPlayer(overlay, sourceId)
+      if (!isCurrent() || overlay.isDestroyed()) {
+        if (!overlay.isDestroyed()) overlay.destroy()
+        return
+      }
+      if (target.previousUrl) {
+        await overlay.webContents.executeJavaScript(
+          `window.__moyuHoverVideo?.remember(${JSON.stringify(target.previousUrl)})`
+        )
+      }
+      const result = await overlay.webContents.executeJavaScript(
+        'window.__moyuHoverVideo?.prepare()'
+      ) as { ready?: boolean } | undefined
+      if (!isCurrent() || !result?.ready || overlay.isDestroyed()) {
+        if (!overlay.isDestroyed()) overlay.destroy()
+        return
+      }
+      overlay.setIgnoreMouseEvents(true, { forward: true })
+      const preloaded = { overlay, sourceId, direction, url: target.url }
+      if (direction < 0) this.preloadedPrevious = preloaded
+      else this.preloadedNext = preloaded
+    } catch {
+      if (!overlay.isDestroyed()) overlay.destroy()
+    }
+  }
+
+  private clearPreloaded(): void {
+    this.preloadToken++
+    const preloaded = [this.preloadedPrevious, this.preloadedNext]
+    this.preloadedPrevious = undefined
+    this.preloadedNext = undefined
+    for (const item of preloaded) {
+      if (item && !item.overlay.isDestroyed()) item.overlay.destroy()
+    }
+  }
+
   hide(): void {
     this.activationId++
     this.clearHoverTimers()
     this.activeHotspotId = undefined
     this.status = 'hidden'
+    shortcutService.setHoverVideoActive(false)
+    this.clearPreloaded()
     for (const overlay of this.overlays.values()) {
       if (overlay.isDestroyed()) continue
       void overlay.webContents.executeJavaScript('window.__moyuHoverVideo?.pause()').catch(() => undefined)
@@ -442,12 +627,13 @@ class HoverVideoService {
       await this.installPlayer(overlay, sourceId)
       if (activationId !== this.activationId) return
       const result = await overlay.webContents.executeJavaScript(
-        `window.__moyuHoverVideo?.play(${JSON.stringify({ advance: this.hasPlayed.has(sourceId), muted: this.preferences.muted })})`
+        `window.__moyuHoverVideo?.play(${JSON.stringify({ muted: this.preferences.muted })})`
       ) as PlaybackResult | undefined
       if (activationId !== this.activationId) return
       this.handlePlaybackResult(overlay, sourceId, result)
     } catch (error) {
       if (activationId !== this.activationId) return
+      shortcutService.setHoverVideoActive(false)
       this.status = 'error'
       this.notice = error instanceof Error ? error.message : '推荐视频加载失败。'
       this.emitState()
@@ -468,23 +654,24 @@ class HoverVideoService {
     if (this.activeOverlay !== overlay) return
     const name = HOVER_VIDEO_SOURCES[sourceId].name
     if (result?.pendingNavigation) {
-      overlay.hide()
+      shortcutService.setHoverVideoActive(false)
       this.status = 'loading'
       this.notice = `正在打开${name}推荐视频…`
       this.emitState()
       return
     }
     if (!result?.playing) {
+      shortcutService.setHoverVideoActive(false)
       overlay.hide()
       throw new Error(`${name} 推荐视频尚未加载，请稍后重试。`)
     }
-    this.hasPlayed.add(sourceId)
     this.status = 'playing'
-    this.notice = undefined
-    overlay.setIgnoreMouseEvents(false, { forward: true })
+    const shortcutResult = shortcutService.setHoverVideoActive(true)
+    this.notice = shortcutResult.ok ? undefined : `视频切换快捷键注册失败：${shortcutResult.error}`
+    overlay.setIgnoreMouseEvents(true, { forward: true })
     overlay.showInactive()
-    overlay.focus()
     this.emitState()
+    void this.preloadAdjacent(sourceId)
   }
 
   private async resumeAfterNavigation(overlay: BrowserWindow, sourceId: HoverVideoSourceId): Promise<void> {
@@ -500,6 +687,7 @@ class HoverVideoService {
       this.handlePlaybackResult(overlay, sourceId, result)
     } catch (error) {
       if (activationId !== this.activationId || this.activeOverlay !== overlay) return
+      shortcutService.setHoverVideoActive(false)
       this.status = 'error'
       this.notice = error instanceof Error ? error.message : '推荐视频加载失败。'
       this.emitState()
@@ -530,10 +718,7 @@ class HoverVideoService {
     throw new Error(`${definition.name} 推荐页加载超时，请稍后重试。`)
   }
 
-  private async ensureOverlay(sourceId: HoverVideoSourceId): Promise<BrowserWindow> {
-    const existing = this.overlays.get(sourceId)
-    if (existing && !existing.isDestroyed()) return existing
-
+  private createOverlay(sourceId: HoverVideoSourceId): BrowserWindow {
     const definition = HOVER_VIDEO_SOURCES[sourceId]
     const overlay = new BrowserWindow({
       width: HOVER_VIDEO_WIDTH,
@@ -545,7 +730,7 @@ class HoverVideoService {
       hasShadow: true,
       alwaysOnTop: true,
       skipTaskbar: true,
-      focusable: true,
+      focusable: false,
       resizable: false,
       movable: false,
       minimizable: false,
@@ -558,19 +743,10 @@ class HoverVideoService {
         contextIsolation: true,
         nodeIntegration: false,
         backgroundThrottling: false,
-        autoplayPolicy: 'no-user-gesture-required',
-        preload: join(__dirname, '../preload/hoverVideo.js')
+        autoplayPolicy: 'no-user-gesture-required'
       }
     })
-    this.overlays.set(sourceId, overlay)
     overlay.setIgnoreMouseEvents(true, { forward: true })
-    overlay.webContents.ipc.on('hover-video:wheel', (_event, direction) => {
-      if (direction !== -1 && direction !== 1) return
-      if (this.activeOverlay !== overlay || this.status !== 'playing') return
-      void overlay.webContents.executeJavaScript(
-        `window.__moyuHoverVideo?.wheel(${direction})`
-      ).catch(() => undefined)
-    })
     overlay.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
     overlay.webContents.on('will-frame-navigate', (event) => {
       if (!definition.allowsUrl(event.url)) event.preventDefault()
@@ -581,10 +757,17 @@ class HoverVideoService {
     overlay.webContents.on('will-redirect', (event, url) => {
       if (!definition.allowsUrl(url)) event.preventDefault()
     })
+    return overlay
+  }
+
+  private watchActiveOverlay(overlay: BrowserWindow, sourceId: HoverVideoSourceId): void {
+    if (this.watchedOverlays.has(overlay)) return
+    this.watchedOverlays.add(overlay)
+    const definition = HOVER_VIDEO_SOURCES[sourceId]
     overlay.webContents.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => {
       if (!isMainFrame || isInPlace || this.activeOverlay !== overlay) return
+      shortcutService.setHoverVideoActive(false)
       overlay.setIgnoreMouseEvents(true, { forward: true })
-      overlay.hide()
       this.status = 'loading'
       this.notice = `正在打开${definition.name}推荐视频…`
       this.emitState()
@@ -594,6 +777,7 @@ class HoverVideoService {
     })
     overlay.webContents.on('did-fail-load', (_event, errorCode, errorDescription, isMainFrame) => {
       if (!isMainFrame || errorCode === -3 || this.activeOverlay !== overlay) return
+      shortcutService.setHoverVideoActive(false)
       this.status = 'error'
       this.notice = `${definition.name} 加载失败：${errorDescription}`
       this.emitState()
@@ -601,6 +785,7 @@ class HoverVideoService {
     overlay.once('closed', () => {
       if (this.overlays.get(sourceId) === overlay) this.overlays.delete(sourceId)
       if (this.activeOverlay === overlay) {
+        shortcutService.setHoverVideoActive(false)
         this.activeOverlay = null
         this.activeHotspotId = undefined
         this.activeSource = undefined
@@ -609,6 +794,16 @@ class HoverVideoService {
         this.emitState()
       }
     })
+  }
+
+  private async ensureOverlay(sourceId: HoverVideoSourceId): Promise<BrowserWindow> {
+    const existing = this.overlays.get(sourceId)
+    if (existing && !existing.isDestroyed()) return existing
+
+    const definition = HOVER_VIDEO_SOURCES[sourceId]
+    const overlay = this.createOverlay(sourceId)
+    this.overlays.set(sourceId, overlay)
+    this.watchActiveOverlay(overlay, sourceId)
 
     try {
       await overlay.loadURL(definition.feedUrl)

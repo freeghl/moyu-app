@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import appIcon from '../../../../resources/icon.png'
 
 const isMaximized = ref(false)
 
@@ -31,11 +32,7 @@ function close(): void {
     style="background: var(--shell-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); -webkit-app-region: drag"
   >
     <div class="flex min-w-0 flex-1 items-center gap-2 pl-3" style="-webkit-app-region: drag">
-      <div class="flex h-5 w-5 items-center justify-center rounded bg-(--color-accent) text-white" style="-webkit-app-region: drag">
-        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="-webkit-app-region: drag">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-        </svg>
-      </div>
+      <img :src="appIcon" alt="" draggable="false" class="h-5 w-5 shrink-0" style="-webkit-app-region: drag" />
       <span class="text-[11px] text-(--color-text-secondary)" style="-webkit-app-region: drag">摸鱼</span>
     </div>
 

@@ -14,6 +14,10 @@ export interface AppSettings {
   hideKey: string
   /** 全局唤出（显示窗口并打开命令面板） */
   summonKey: string
+  /** 悬浮视频上一条，空字符串表示不启用 */
+  videoPreviousKey: string
+  /** 悬浮视频下一条，空字符串表示不启用 */
+  videoNextKey: string
 }
 
 /** 主窗口尺寸与位置记忆 */
@@ -69,7 +73,9 @@ export function createDefaultPreferences(): AppPreferences {
       restoreSession: true,
       bossKey: 'Alt+Q',
       hideKey: 'Alt+H',
-      summonKey: 'CommandOrControl+Shift+K'
+      summonKey: 'CommandOrControl+Shift+K',
+      videoPreviousKey: 'CommandOrControl+Up',
+      videoNextKey: 'CommandOrControl+Down'
     },
     window: { width: 1400, height: 900, maximized: false },
     session: {
@@ -211,7 +217,9 @@ export function normalizePreferences(raw: unknown): AppPreferences {
       restoreSession: readBoolean(settings.restoreSession, defaults.settings.restoreSession),
       bossKey: legacyBossKeyWasHide ? defaults.settings.bossKey : readText(settings.bossKey, defaults.settings.bossKey),
       hideKey: readText(settings.hideKey, defaults.settings.hideKey),
-      summonKey: readText(settings.summonKey, defaults.settings.summonKey)
+      summonKey: readText(settings.summonKey, defaults.settings.summonKey),
+      videoPreviousKey: readText(settings.videoPreviousKey, defaults.settings.videoPreviousKey),
+      videoNextKey: readText(settings.videoNextKey, defaults.settings.videoNextKey)
     },
     window: readWindow(raw.window, defaults.window),
     session: readSession(raw.session, defaults.session),
